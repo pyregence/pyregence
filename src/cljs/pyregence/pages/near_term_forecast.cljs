@@ -830,25 +830,25 @@
       (mb/zoom-to-extent! (get-current-layer-extent) (current-layer) max-zoom))))
 
 (defn- auto-switch-disabled-params!
-  "When a param changes, other params' selected options may become disabled.
-   Detects this and switches them to the first non-disabled option."
+  "When a param changes, other params' selected options may become unavailable.
+   Detects this and switches them to the default option, or to the first available one."
   []
-  (let [params          (get-forecast-opt :params)
-        current-vals    (get @!/*params @!/*forecast)
-        selected-set    (->> current-vals (vals) (filter keyword?) (set))]
-    (doseq [[param-key {:keys [options]}] params
-            :let [selected-option (get current-vals param-key)
-                  {:keys [disabled-for]} (get options selected-option)]
-            :when (and (set? disabled-for)
-                       (seq (set/intersection disabled-for selected-set)))
-            :let [first-enabled (->> options
-                                     (remove (fn [[_ {:keys [disabled-for hidden?]}]]
-                                               (or hidden?
-                                                   (and (set? disabled-for)
-                                                        (seq (set/intersection disabled-for selected-set))))))
-                                     (ffirst))]
-            :when first-enabled]
-      (swap! !/*params assoc-in [@!/*forecast param-key] first-enabled))))
+  (let [params       (get-forecast-opt :params)
+        current-vals (get @!/*params @!/*forecast)
+        selected-set (->> current-vals (vals) (filter keyword?) (set))]
+    (doseq [[param-key {:keys [options default-option]}] params
+            :let  [selected-option (get current-vals param-key)]
+            :when (c/option-unavailable? (get options selected-option) selected-set)
+            :let  [available (->> options
+                                  (remove (fn [[_ {:as option :keys [hidden?]}]]
+                                            (or hidden?
+                                                (c/option-unavailable? option selected-set))))
+                                  (map first))
+                   ;; default first, so leaving a model that hid a param lands back on the
+                   ;; median rather than on whichever option happens to be declared first
+                   fallback  (or (some #{default-option} available) (first available))]
+            :when fallback]
+      (swap! !/*params assoc-in [@!/*forecast param-key] fallback))))
 
 (defn- select-param!
   "The function called whenever an input dropdown is changed on the collapsible panel.
@@ -860,10 +860,13 @@
   (let [main-key (first keys)]
     ;; Mutual exclusivity: when a param with :resets is changed to a non-:none value,
     ;; reset the specified params to their reset values (e.g. fire-name <-> match-drop-name).
-    (when-let [resets (get-in @!/capabilities [@!/*forecast :params main-key :resets])]
-      (when (not= val :none)
-        (doseq [[reset-key reset-val] resets]
-          (swap! !/*params assoc-in [@!/*forecast reset-key] reset-val))))
+    ;; The chosen option may carry its own :resets on top, which is how a match drop selects
+    ;; the model that produced it instead of leaving the user to guess.
+    (when (not= val :none)
+      (doseq [resets [(get-in @!/capabilities [@!/*forecast :params main-key :resets])
+                      (get-in @!/capabilities [@!/*forecast :params main-key :options val :resets])]
+              [reset-key reset-val] resets]
+        (swap! !/*params assoc-in [@!/*forecast reset-key] reset-val)))
     (when (= main-key :model-init)
       (reset! !/*last-start-time val))
     (when (#{:fire-name :match-drop-name} main-key)
