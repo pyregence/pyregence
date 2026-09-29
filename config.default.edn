@@ -169,8 +169,8 @@
  :pyregence.weather-stations/get-observation-stations-every-n-minutes 1440 ;; once a day
  :pyregence.email/verification-token-expiry-minutes 15
  ;; Bounds (pentest AC): idle < 30, absolute < 8 h.
- :pyregence.auth/idle-timeout-min                   15
- :pyregence.auth/absolute-timeout-min               420
+ :pyregence.auth/idle-timeout-min                   29
+ :pyregence.auth/absolute-timeout-min               479
  ;; How long the password step stays good for while the second factor is owed.
  :pyregence.auth/two-factor-window-min              15
  :pyregence.match-drop/match-drop                   {:sig3-auth           "<AUTH_TOKEN>"
