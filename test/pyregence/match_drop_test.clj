@@ -5,6 +5,7 @@
    [pyregence.match-drop :refer [calculate-transitions
                                  cawfe-match-drop-args->body
                                  cawfe-sim-hours
+                                 get-md-available-dates
                                  initiate-md!
                                  standard-match-drop-args->body
                                  model->polling-steps]]
@@ -334,3 +335,40 @@
                                                                  (assoc md-params :model "standard"))]
       (is (= {:started "standard"} body))
       (is (true? created?)))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; :sig3-use-gke flag
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn- sig3-url-with-gke-flag
+  "Calls `get-md-available-dates` with `:sig3-use-gke` set to `flag` and returns
+   the URL it sent to sig3."
+  [flag]
+  (let [url (atom nil)]
+    (with-redefs [triangulum.config/get-config
+                  (fn [& ks]
+                    (case (vec ks)
+                      [:triangulum.views/client-keys :features :sig3-endpoint] "https://corespeq.test"
+                      [:pyregence.match-drop/match-drop :sig3-use-gke]         flag
+                      [:pyregence.match-drop/match-drop :sig3-gke-endpoint]    "http://gke.test"
+                      nil))
+
+                  clj-http.client/get
+                  (fn [u _]
+                    (reset! url u)
+                    {:status 200 :body "{}"})
+
+                  pyregence.match-drop/parse-available-wx-dates
+                  (constantly {})]
+      (get-md-available-dates nil)
+      @url)))
+
+(deftest sig3-stays-on-corespeq-when-the-gke-flag-is-off
+  (testing "with :sig3-use-gke false, sig3 calls go to :features :sig3-endpoint"
+    (is (= "https://corespeq.test/api/get-available-wx-times"
+           (sig3-url-with-gke-flag false)))))
+
+(deftest sig3-goes-to-gke-when-the-gke-flag-is-on
+  (testing "with :sig3-use-gke true, sig3 calls go to :sig3-gke-endpoint"
+    (is (= "http://gke.test/api/get-available-wx-times"
+           (sig3-url-with-gke-flag true)))))
