@@ -29,9 +29,7 @@
        (into {})))
 
 (defn- get-sig3-endpoint []
-  (if (get-md-config :sig3-use-gke)
-    (get-md-config :sig3-gke-endpoint)
-    (get-config :triangulum.views/client-keys :features :sig3-endpoint)))
+  (get (get-md-config :sig3-endpoints) (get-md-config :sig3-target)))
 
 (defn- cawfe-artefact-storage-configured?
   "Whether this environment names the storage prefix for CAWFE run artifacts."
