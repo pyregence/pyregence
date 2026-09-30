@@ -792,7 +792,7 @@
   [{:keys [name source] :as fire-properties}]
   (assoc fire-properties
          :icon        ({"Cal Fire"   [svg/cal-fire]
-                        "Watch Duty" [svg/watch-duty {}]} source)
+                        "Watch Duty" [svg/watch-duty]} source)
          :on-click    #(select-param! (keyword name) :fire-name)
          :show-link?  (forecast-exists? name)))
 
