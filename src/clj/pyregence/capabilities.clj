@@ -136,8 +136,57 @@
      :fire-name   fire-name
      :forecast    forecast
      :filter-set  #{forecast fire-name model fuel percentile output model-init}
+     :model       model
      :model-init  model-init
      :layer-group ""}))
+
+(defn- split-cawfe-layer-name
+  "Gets information about a CAWFE layer based on the layer's name.
+   The layer is assumed to be in the format:
+   `match-drop-forecast_fire-name_forecast-start-time:cawfe_output-type`
+   e.g. `match-drop-forecast_md-3_20260910_134900:cawfe_crown-fire`
+
+   Two segments where the other models have four: CAWFE runs against one fuel source and is
+   a single deterministic run, so it publishes neither a fuel nor a percentile. The filter
+   set is short to match, which is what `get-layers` needs, since it compares the selected
+   set to this one for equality."
+  [name-string]
+  (let [[workspace layer]            (str/split name-string #":")
+        [forecast fire-name ts1 ts2] (str/split workspace #"_")
+        [model output]               (str/split layer #"_" 2)
+        model-init                   (str ts1 "_" ts2)]
+    {:workspace   workspace
+     :fire-name   fire-name
+     :forecast    forecast
+     :filter-set  #{forecast fire-name model output model-init}
+     ;; Reported so a match drop can carry its own model: the run was made by one model and
+     ;; picking another resolves nothing, so the option selects it rather than the user.
+     :model       model
+     :model-init  model-init
+     :layer-group ""}))
+
+^:rct/test
+(comment
+  ;; The output keeps its own dashes, and nothing stands in for fuel or percentile
+  (split-cawfe-layer-name "match-drop-forecast_md-3_20260910_134900:cawfe_crown-fire")
+  ;=>> {:workspace   "match-drop-forecast_md-3_20260910_134900"
+  ;     :fire-name   "md-3"
+  ;     :forecast    "match-drop-forecast"
+  ;     :model-init  "20260910_134900"
+  ;     :filter-set  #{"match-drop-forecast" "md-3" "cawfe" "crown-fire" "20260910_134900"}}
+
+  ;; An output carrying its own underscore still splits into exactly two segments
+  (split-cawfe-layer-name "match-drop-forecast_md-3_20260910_134900:cawfe_time-of-arrival")
+  ;=>> {:filter-set #{"match-drop-forecast" "md-3" "cawfe" "time-of-arrival" "20260910_134900"}}
+
+  ;; The model is reported so a match drop can select it rather than the user picking it
+  (:model (split-cawfe-layer-name "match-drop-forecast_md-3_20260910_134900:cawfe_crown-fire"))
+  ;=> "cawfe"
+
+  (:model (split-fire-spread-forecast-layer-name
+           "match-drop-forecast_md-204_20260527_201800:elmfire_landfire_50_crown-fire"))
+  ;=> "elmfire"
+  )
 
 (defn- split-isochrones-layer-name
   "Gets information about an active fire isochrones layer based on its name.
@@ -263,6 +312,13 @@
                                (or (get-config :triangulum.views/client-keys :features :pyretechnics)
                                    (not (str/includes? full-name ":pyretec"))))
                           (merge-fn (split-fire-spread-forecast-layer-name full-name))
+
+                          ;; Two segments after the colon rather than four, so this can never
+                          ;; be reached by the branch above.
+                          (and (re-matches #"[a-z|-]+_[a-z|-]+[a-z|\d|-]*_\d{8}_\d{6}:cawfe_[a-z-]+" full-name)
+                               (get-config :triangulum.views/client-keys :features :match-drop)
+                               (get-config :triangulum.views/client-keys :features :cawfe))
+                          (merge-fn (split-cawfe-layer-name full-name))
 
                           (and (str/includes? full-name "isochrones")
                                (re-matches #"([a-z|-]+_)[a-z|-]+[a-z|\d|-]*_\d{8}_\d{6}:([a-z|-]+_){2}(\d{2}|combined)_isochrones_[a-z|\d|-]*_\d{8}_\d{6}_(\d{2}|combined)" full-name)
@@ -493,14 +549,20 @@
     (->> (concat (:trinity @layers) (:match-drop @layers))
          (filter (fn [{:keys [forecast]}]
                    (#{"fire-spread-forecast" "match-drop-forecast"} forecast)))
-         (map :fire-name)
-         (distinct)
+         (reduce (fn [acc {:keys [fire-name model]}]      ; fire name -> the models that made it
+                   (update acc fire-name (fnil conj #{}) model))
+                 {})
          (reduce
-          (fn [acc fire-name]
+          (fn [acc [fire-name models]]
             (let [match-job-id (some-> fire-name
                                        (str/split #"md-")
                                        (second)
-                                       (parse-long))]
+                                       (parse-long))
+                  ;; The run was made by one model and picking another resolves nothing, so
+                  ;; selecting a fire selects its model. Without this on both branches,
+                  ;; leaving a CAWFE drop for an active fire strands the panel on CAWFE and
+                  ;; Model, Fuels and Predicted Fire Size all stay hidden.
+                  resets       {:model (if (contains? models "cawfe") :cawfe :elmfire)}]
               (cond
                  ;; Active fire (no match-job-id and not a legacy match drop using the old naming convention)
                 (and (nil? match-job-id) (not (str/includes? fire-name "match-drop")))
@@ -508,6 +570,7 @@
                         {:opt-label     (fire-name-capitalization fire-name)
                          :filter-set    #{"fire-spread-forecast" fire-name}
                          :auto-zoom?    true
+                         :resets        resets
                          :geoserver-key :trinity})
                 ;; Match drop belonging to this user
                 (contains? match-drop-names match-job-id)
@@ -515,6 +578,7 @@
                         {:opt-label     (get match-drop-names match-job-id)
                          :filter-set    #{"match-drop-forecast" fire-name}
                          :auto-zoom?    true
+                         :resets        resets
                          :geoserver-key :match-drop})
                 :else acc)))
           {:active-fires {} :match-drops {}}))))
@@ -538,6 +602,25 @@
      (reads-names? live now)
      (reads-names? live 0)])
   ;=> [false false true]
+
+  ;; Every option carries the model that made it, so selecting a fire selects its model and
+  ;; a CAWFE drop never leaves the panel stuck on CAWFE afterwards.
+  (let [now   (System/currentTimeMillis)
+        saved @layers]
+    (with-redefs [call-sql   (fn [q & _]
+                               (if (= q "get_user_match_names")
+                                 [{:match_job_id 904 :display_name "MD 904"}]
+                                 [{:get_user_session_invalidated_at 0}]))
+                  get-config (fn [& _] nil)]
+      (reset! layers {:trinity    [{:forecast "fire-spread-forecast" :fire-name "ca-plaskett" :model "elmfire"}
+                                   {:forecast "fire-spread-forecast" :fire-name "ca-plaskett" :model "pyretec"}]
+                      :match-drop [{:forecast "match-drop-forecast" :fire-name "md-904" :model "cawfe"}]})
+      (let [r (get-fire-names {:user-id 1 :match-drop-access? true
+                               :created-at (- now 1000) :last-active now})]
+        (reset! layers saved)
+        [(get-in r [:active-fires :ca-plaskett :resets])
+         (get-in r [:match-drops :md-904 :resets])])))
+  ;=> [{:model :elmfire} {:model :cawfe}]
   )
 
 (defn get-user-layers [session]
