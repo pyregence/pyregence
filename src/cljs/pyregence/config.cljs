@@ -389,6 +389,9 @@
                                                             :landfire-2.5.0       {:opt-label    "LANDFIRE 2.5.0 (2025 capable)"
                                                                                    :filter       "landfire-2.5.0"
                                                                                    :disabled-for #{:asp :slp :dem}}
+                                                            :landfire-2.4.0-HI    {:opt-label    "LANDFIRE 2.4.0 HI"
+                                                                                   :filter       "landfire-2.4.0 HI"
+                                                                                   :disabled-for #{:asp :slp :dem}}
                                                             :landfire-2.5.0-2.4.0 {:opt-label    "LANDFIRE 2.5.0/2.4.0 (2025/2024 capable)"
                                                                                    :filter       "landfire-2.5.0-2.4.0"
                                                                                    :disabled-for #{:asp :slp :dem}}
