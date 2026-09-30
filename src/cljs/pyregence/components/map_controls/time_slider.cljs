@@ -48,12 +48,18 @@
                                      (reset! *init-id nil)
                                      (let [delay    (get-in c/speeds [@*speed :delay])
                                            next-idx (mod (inc @!/*layer-idx) (step-count))
-                                           schedule #(reset! *loop-id (js/setTimeout loop-animation! %))]
+                                           schedule #(reset! *loop-id (js/setTimeout loop-animation! %))
+                                           ;; The swap's own wait counts toward the frame delay, so each speed means its label.
+                                           advance! (fn []
+                                                      (let [started (js/Date.now)]
+                                                        (select-layer! next-idx
+                                                                       #(when @!/animate?
+                                                                          (schedule (max 0 (- delay (- (js/Date.now) started))))))))]
                                        (cond
                                          @!/paused-for-buffer?
                                          (if (!/buffer-healthy?)
                                            (do (reset! !/paused-for-buffer? false)
-                                               (select-layer! next-idx #(when @!/animate? (schedule delay))))
+                                               (advance!))
                                            (schedule 100))
 
                                          (!/should-start-buffering?)
@@ -61,7 +67,7 @@
                                              (schedule 100))
 
                                          :else
-                                         (select-layer! next-idx #(when @!/animate? (schedule delay)))))))
+                                         (advance!)))))
 
                begin-animation!  (fn [initial-delay]
                                    (mb/start-buffer-polling!)

@@ -986,9 +986,11 @@
     (when (js-invoke @the-map "getLayer" new-layer-id)
       (js-invoke @the-map "setLayoutProperty" new-layer-id "visibility" "visible"))
 
-    (if @!/animate?
-      (js/setTimeout wait-for-render! 100)
-      (wait-for-layer! 15 50))))
+    (cond
+      ;; Buffer polling already saw this frame visible and loaded, so the render waits are pure latency.
+      (and @!/animate? (!/frame-ready? frame-idx)) (do-swap!)
+      @!/animate?                                  (js/setTimeout wait-for-render! 100)
+      :else                                        (wait-for-layer! 15 50))))
 
 (defn cleanup-animation-layers! []
   (try
