@@ -644,7 +644,7 @@
                                                               [:br]
                                                               [:br]
                                                               [:strong "Hybrid"]
-                                                              " - Blend of HRRR, NAM 3 km, and GFS 0.125\u00B0 to 8 days."
+                                                              " - Blend of HRRR, RRFS, and GFS 0.125\u00B0 to 8 days."
                                                               [:br]
                                                               [:br]
                                                               [:strong "GFS 0.125\u00B0"]
@@ -945,7 +945,7 @@
                                     :weather    {:opt-label  "Weather Model"
                                                  :hover-text [:p {:style {:margin-bottom "0"}}
                                                               [:strong "Hybrid"]
-                                                              " - Blend of HRRR, NAM 3 km, and GFS 0.125\u00B0 to 8 days."
+                                                              " - Blend of HRRR, RRFS, and GFS 0.125\u00B0 to 8 days."
                                                               [:br]
                                                               [:br]
                                                               [:strong "NAM"]
