@@ -283,7 +283,7 @@
                                                                                          :landfire-1.0.5 :landfire-1.3.0 :landfire-1.4.0
                                                                                          :landfire-2.0.0 :landfire-2.1.0 :landfire-2.2.0
                                                                                          :landfire-2.3.0 :landfire-2.4.0 :landfire-2.5.0
-                                                                                         :landfire-2.5.0-2.4.0}}
+                                                                                         :landfire-2.5.0-2.4.0 :landfire-2.4.0-hi :landfire-2.5.0-ak}}
                                                             :asp    {:opt-label       "Aspect"
                                                                      :filter          "asp"
                                                                      :units           ""
@@ -294,7 +294,7 @@
                                                                      :filter          "slp"
                                                                      :units           "\u00B0"
                                                                      :reverse-legend? true
-                                                                     :disabled-for    #{:cecs :cfo :fire-factor-2022 :fire-factor-2023 :fire-factor-2024 :landfire-1.0.5 :landfire-1.3.0 :landfire-1.4.0 :landfire-2.0.0 :landfire-2.1.0 :landfire-2.3.0 :landfire-2.4.0 :landfire-2.5.0-2.4.0 :landfire-2.5.0}}
+                                                                     :disabled-for    #{:cecs :cfo :fire-factor-2022 :fire-factor-2023 :fire-factor-2024 :landfire-1.0.5 :landfire-1.3.0 :landfire-1.4.0 :landfire-2.0.0 :landfire-2.1.0 :landfire-2.3.0 :landfire-2.4.0 :landfire-2.5.0-2.4.0 :landfire-2.5.0 :landfire-2.4.0-hi :landfire-2.5.0-ak}}
                                                             :dem    {:opt-label       "Elevation"
                                                                      :filter          "dem"
                                                                      :units           "ft"
@@ -392,9 +392,15 @@
                                                             :landfire-2.5.0-2.4.0 {:opt-label    "LANDFIRE 2.5.0/2.4.0 (2025/2024 capable)"
                                                                                    :filter       "landfire-2.5.0-2.4.0"
                                                                                    :disabled-for #{:asp :slp :dem}}
+                                                            :landfire-2.5.0-ak    {:opt-label    "LANDFIRE 2.5.0 - Alaska"
+                                                                                   :filter       "landfire-2.5.0-ak"
+                                                                                   :disabled-for #{:fbp :slp}}
                                                             :landfire-2.4.0       {:opt-label    "LANDFIRE 2.4.0 (2024 capable)"
                                                                                    :filter       "landfire-2.4.0"
                                                                                    :disabled-for #{:asp :slp :dem}}
+                                                            :landfire-2.4.0-hi    {:opt-label    "LANDFIRE 2.4.0 - Hawaii"
+                                                                                   :filter       "landfire-2.4.0-hi"
+                                                                                   :disabled-for #{:fbp :slp}}
                                                             :landfire-2.3.0       {:opt-label    "LANDFIRE 2.3.0 (2023 capable)"
                                                                                    :filter       "landfire-2.3.0"
                                                                                    :disabled-for #{:asp :slp :dem}}
