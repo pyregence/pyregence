@@ -2,12 +2,16 @@
   (:import  [java.time Instant Duration])
   (:require [clj-http.client     :as client]
             [clojure.data.json   :as json]
+            [clojure.string      :as str]
             [triangulum.config   :refer [get-config]]
+            [triangulum.logging  :refer [log-str]]
             [triangulum.response :refer [data-response]]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; AlertWildfire Cameras
-;; See API documentation: http://dev-public.nvseismolab.org/doc/api/firecams/
+;; Wildfire Cameras
+;; ALERTWest: http://dev-public.nvseismolab.org/doc/api/firecams/
+;; FAA WeatherCams: https://weathercams.faa.gov/, reached through an
+;; nginx proxy that adds the API token and caches responses.
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -18,6 +22,11 @@
 
 (defn- get-alert-west-api-defaults []
   {:headers {"X-Api-Key" (get-config ::alert-west-api-key)}})
+
+(defn- get-faa-proxy-url []
+  (get-config ::faa-proxy-url))
+
+(def ^:private faa-images-url "https://images.wcams-static.faa.gov/")
 
 (def ^:private cache-max-age            (* 24 60 1000)) ; Once a day
 
@@ -56,6 +65,25 @@
                                            {:as :byte-array})]
     (when (= 200 status) body)))
 
+(defn- faa-api-request [path]
+  (let [{:keys [status body]} (api-request path (str (get-faa-proxy-url) "/api") {})]
+    (when (= 200 status)
+      (:payload (json/read-str body :key-fn keyword)))))
+
+(defn- faa-current-image
+  "Fetches the latest image of an FAA camera through the proxy. Only image URLs
+   on the FAA static host are fetched, rewritten to the proxy's /images/ path."
+  [camera-id]
+  (when-let [image-uri (some-> (faa-api-request (str "cameras/" camera-id "/images/last/1"))
+                               (first)
+                               (:imageUri))]
+    (when (str/starts-with? image-uri faa-images-url)
+      (let [{:keys [status body]} (client/get (str (get-faa-proxy-url)
+                                                   "/images/"
+                                                   (subs image-uri (count faa-images-url)))
+                                              {:as :byte-array})]
+        (when (= 200 status) body)))))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Helper Functions
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -71,6 +99,7 @@
                 :coordinates [(parse-num (:longitude site))
                               (parse-num (:latitude site))]}
    :properties {:api-name    api-name
+                :camera-id   name
                 :latitude    (parse-num (:latitude site))
                 :longitude   (parse-num (:longitude site))
                 :name        name
@@ -79,6 +108,22 @@
                 :tilt        (parse-num (:tilt position))
                 :update-time (or update_time (:time image))
                 :image-url   (:url image)}})
+
+(defn- faa-camera->feature
+  [{:keys [siteName state]}
+   {:keys [cameraId cameraDirection cameraBearing cameraLastSuccess latitude longitude]}]
+  {:type       "Feature"
+   :geometry   {:type        "Point"
+                :coordinates [longitude latitude]}
+   :properties {:api-name    "faa"
+                :camera-id   (str cameraId)
+                :latitude    latitude
+                :longitude   longitude
+                :name        (str siteName " (" cameraDirection ")")
+                :pan         cameraBearing
+                :state       state
+                :tilt        0
+                :update-time cameraLastSuccess}})
 
 (defn- ->feature-collection [features]
   {:type     "FeatureCollection"
@@ -106,6 +151,30 @@
   (some->> (get-wildfire-cameras!)
            (pmap #(site->feature "alert-west" %))))
 
+(defn- get-and-conform-faa-cameras!
+  "Fetches FAA WeatherCams cameras and reformats them, skipping inactive sites
+   and cameras under maintenance or out of order."
+  []
+  (some->> (faa-api-request "sites")
+           (remove #(or (:siteInMaintenance %) (not (:siteActive %))))
+           (mapcat (fn [site]
+                     (->> (:cameras site)
+                          (remove #(or (:cameraInMaintenance %) (:cameraOutOfOrder %)))
+                          (map #(faa-camera->feature site %)))))))
+
+(defn- get-all-cameras!
+  "Fetches every configured camera source in parallel. A source that fails
+   yields nil instead of taking the others down with it."
+  []
+  (pmap (fn [[source-name get-cameras!]]
+          (try
+            (get-cameras!)
+            (catch Exception e
+              (log-str "Failed to fetch " source-name " cameras: " (ex-message e))
+              nil)))
+        (cond-> [["ALERTWest" get-and-conform-wildfire-cameras!]]
+          (get-faa-proxy-url) (conj ["FAA" get-and-conform-faa-cameras!]))))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Public Functions
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -116,25 +185,28 @@
   (data-response
    (if (valid-cache?)
      @camera-cache
-     (let [new-cameras (->> (get-and-conform-wildfire-cameras!)
+     (let [sources     (get-all-cameras!)
+           new-cameras (->> (apply concat sources)
                             ;; remove inactive cameras
                             (remove (fn [{{timestamp :update-time} :properties}]
                                       (or (nil? timestamp)
                                           (utc-timestamp->four-hours-old? timestamp))))
                             (->feature-collection))]
-       (reset-cache! new-cameras)
+       ;; Only cache complete results so a failed source is retried on the next request
+       (when (every? some? sources)
+         (reset-cache! new-cameras))
        new-cameras))))
 
 (defn get-current-image
   "Builds a response object with current image of a camera.
    Response type is an 'image/jpeg'"
-  [_ camera-name api-name]
-  {:pre [(string? camera-name)]}
-  (let [[api-url api-defaults] (case api-name
-                                 "alert-west" [alert-west-api-url (get-alert-west-api-defaults)]
-                                 nil)]
-    (if (and api-url api-defaults)
-      (data-response (api-current-image camera-name api-url api-defaults)
-                     {:type "image/jpeg"})
-      (data-response (str "Invalid cameras API name.")
-                     {:status 403}))))
+  [_ camera-id api-name]
+  {:pre [(string? camera-id)]}
+  (case api-name
+    "alert-west" (data-response (api-current-image camera-id alert-west-api-url (get-alert-west-api-defaults))
+                                {:type "image/jpeg"})
+    "faa"        (if (re-matches #"\d+" camera-id)
+                   (data-response (faa-current-image camera-id)
+                                  {:type "image/jpeg"})
+                   (data-response "Invalid FAA camera ID." {:status 403}))
+    (data-response "Invalid cameras API name." {:status 403})))

@@ -21,7 +21,7 @@
   (go
     (->> (u-async/call-clj-async! "get-current-image"
                                   :post-blob
-                                  (:name active-camera)
+                                  (:camera-id active-camera)
                                   (:api-name active-camera))
          (<!)
          (:body)
@@ -47,6 +47,16 @@
    :position  "absolute"
    :top       "2rem"
    :width     "10%"})
+
+(defn- $faa-attribution-style []
+  {:background-color ($/color-picker :bg-color 0.8)
+   :border-radius    "4px"
+   :color            ($/color-picker :font-color)
+   :font-size        "0.8rem"
+   :left             "2rem"
+   :padding          "0.2rem 0.5rem"
+   :position         "absolute"
+   :top              "2rem"})
 
 (defn- $mobile-camera-tool []
   {:background-color ($/color-picker :bg-color)
@@ -86,21 +96,35 @@
         :ref    "noreferrer noopener"
         :target "_blank"}
     "ALERTWest"]
+   " and "
+   [:a {:href   "https://weathercams.faa.gov/"
+        :ref    "noreferrer noopener"
+        :target "_blank"}
+    "FAA WeatherCams"]
    "."])
 
-(defn- camera-image [camera-name camera-image-url reset-view zoom-camera image-src]
+(defn- camera-attribution [{:keys [api-name image-url]}]
+  (case api-name
+    "faa" [:a {:href   "https://weathercams.faa.gov/"
+               :ref    "noreferrer noopener"
+               :style  ($/combine $faa-attribution-style)
+               :target "_blank"}
+           "FAA WeatherCams"]
+    [:a {:href   (str "https://www.alertwest.live/cam-console/" (alert-image-url->alert-camera-id image-url))
+         :ref    "noreferrer noopener"
+         :target "_blank"}
+     [:img {:src   "images/alert_west_logo.png"
+            :style ($/combine $alert-logo-style)}]]))
+
+(defn- camera-image [camera reset-view zoom-camera image-src]
   [:div
    [:div {:style {:display         "flex"
                   :justify-content "center"
                   :position        "absolute"
                   :top             "2rem"
                   :width           "100%"}}
-    [:label (str "Camera: " camera-name)]]
-   [:a {:href   (str "https://www.alertwest.live/cam-console/" (alert-image-url->alert-camera-id camera-image-url))
-        :ref    "noreferrer noopener"
-        :target "_blank"}
-    [:img {:src   "images/alert_west_logo.png"
-           :style ($/combine $alert-logo-style)}]]
+    [:label (str "Camera: " (:name camera))]]
+   [camera-attribution camera]
    (when @!/terrain?
      [tool-tip-wrapper
       "Zoom Out to 2D"
@@ -175,23 +199,20 @@
                                      #(mb/add-feature-highlight!
                                        "fire-cameras" "fire-cameras"
                                        :click-fn on-click))]
-    (let [camera-name        (:name @active-camera)
-          camera-image-url   (:image-url @active-camera)
-          render-content     (fn []
+    (let [render-content     (fn []
                                (cond
                                  (nil? @active-camera)
                                  [camera-tool-intro]
 
                                  @image-src
                                  [camera-image
-                                  camera-name
-                                  camera-image-url
+                                  @active-camera
                                   reset-view
                                   zoom-camera
                                   image-src]
 
                                  :else
-                                 [loading-camera camera-name]))]
+                                 [loading-camera (:name @active-camera)]))]
       (if @!/mobile?
         [:div#wildfire-mobile-camera-tool
          {:style ($/combine $/tool $mobile-camera-tool)}

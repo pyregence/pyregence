@@ -179,10 +179,8 @@ A browser more narrow than 800 pixels enables a special mobile styling across th
   mobile? (r/atom false))
 (defonce ^{:doc "A boolean that maintains the hide/show toggle state of the 3D Terrain Tool."}
   terrain? (r/atom false))
-(defonce ^{:doc "The GeoJSON response from pinging the ALERT Wildfire and ALERTCalifornia camera APIs.
-Returns all cameras currently available in ALERT Wildfire and ALERTCalifornia. Note that all ALERT Wildfire
-cameras from California are filtered out since they do not work anymore. We instead use ALERTCalifornia for
-California cameras. This atom is used to create the camera layer in mapbox.cljs."}
+(defonce ^{:doc "The GeoJSON of the active cameras from ALERTWest and FAA WeatherCams, merged by the backend.
+Each feature's `:api-name` names its source. This atom is used to create the camera layer in mapbox.cljs."}
   the-cameras (r/atom nil))
 (defonce ^{:doc "The GeoJSON response from api.weather.gov. TODO is this atom also used to create the WS layer in mapbox.cljs."}
   the-weather-stations (r/atom nil))
