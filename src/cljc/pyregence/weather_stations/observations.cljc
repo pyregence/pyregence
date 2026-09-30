@@ -1,7 +1,35 @@
 (ns pyregence.weather-stations.observations
   (:require
+   [clojure.string :as str]
    [pyregence.weather-stations.observations.CA    :as observations-ca]
-   [pyregence.weather-stations.observations.US    :as observations-us]))
+   [pyregence.weather-stations.observations.US    :as observations-us])
+  #?(:clj
+     (:import [java.time ZonedDateTime ZoneOffset]
+              [java.time.format DateTimeFormatter])))
+
+(defn partner-ids->partner-url
+  [{:keys [network stn_id]}]
+  (let [get-yyyymmdd
+        (fn
+          []
+          #?(:clj
+             (let [now (ZonedDateTime/now ZoneOffset/UTC)]
+               (.format now (DateTimeFormatter/ofPattern "yyyyMMdd")))
+
+             :cljs
+             (let [now (js/Date.)
+                   pad #(if (< % 10) (str "0" %) (str %))
+                   year (.getUTCFullYear now)
+                   month (pad (inc (.getUTCMonth now)))
+                   day (pad (.getUTCDate now))]
+               (str year month day))))]
+    (str
+     "https://dd.weather.gc.ca/today/observations/swob-ml/partners/"
+     network
+     "/"
+     (get-yyyymmdd)
+     "/"
+     (str/lower-case stn_id))))
 
 (defn weather-station-response->observation-url
   [{:keys [stationIdentifier msc_id]}]

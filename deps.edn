@@ -1,5 +1,6 @@
 {:paths   ["src/clj" "src/cljs" "src/cljc" "resources" "target" "src/sql"]
  :deps    {buddy/buddy-sign                                 {:mvn/version "3.5.351"}
+           org.clj-commons/hickory                          {:mvn/version "0.7.7"}
            clj-http/clj-http                                {:mvn/version "3.13.1"}
            clj-tagsoup/clj-tagsoup                          {:mvn/version "0.3.0" :exclusions [org.clojure/data.xml org.clojure/clojure]}
            com.cognitect/transit-clj                        {:mvn/version "1.0.324"}
