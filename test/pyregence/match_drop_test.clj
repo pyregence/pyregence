@@ -5,6 +5,7 @@
    [pyregence.match-drop :refer [calculate-transitions
                                  cawfe-match-drop-args->body
                                  cawfe-sim-hours
+                                 get-md-available-dates
                                  initiate-md!
                                  standard-match-drop-args->body
                                  model->polling-steps]]
@@ -234,11 +235,12 @@
       (with-redefs [triangulum.config/get-config
                     (fn [& ks]
                       (case (vec ks)
-                        [:triangulum.views/client-keys :features :match-drop]    true
-                        [:triangulum.views/client-keys :features :cawfe]         true
-                        [:triangulum.views/client-keys :features :sig3-endpoint] "http://sig3.test"
-                        [:pyregence.match-drop/match-drop :cawfe-artefacts-dir]  (:cawfe-artefacts-dir md-config)
-                        [:pyregence.match-drop/match-drop :max-queue-size]       5
+                        [:triangulum.views/client-keys :features :match-drop]   true
+                        [:triangulum.views/client-keys :features :cawfe]        true
+                        [:pyregence.match-drop/match-drop :sig3-target]         :corespeq
+                        [:pyregence.match-drop/match-drop :sig3-endpoints]      {:corespeq "http://sig3.test"}
+                        [:pyregence.match-drop/match-drop :cawfe-artefacts-dir] (:cawfe-artefacts-dir md-config)
+                        [:pyregence.match-drop/match-drop :max-queue-size]      5
                         nil))
 
                     triangulum.database/call-sql
@@ -334,3 +336,40 @@
                                                                  (assoc md-params :model "standard"))]
       (is (= {:started "standard"} body))
       (is (true? created?)))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; :sig3-target
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn- sig3-url-for-target
+  "Calls `get-md-available-dates` with `:sig3-target` set to `target` and returns
+   the URL it sent to sig3."
+  [target]
+  (let [url (atom nil)]
+    (with-redefs [triangulum.config/get-config
+                  (fn [& ks]
+                    (case (vec ks)
+                      [:pyregence.match-drop/match-drop :sig3-target]    target
+                      [:pyregence.match-drop/match-drop :sig3-endpoints] {:corespeq "https://corespeq.test"
+                                                                          :gke      "http://gke.test"}
+                      nil))
+
+                  clj-http.client/get
+                  (fn [u _]
+                    (reset! url u)
+                    {:status 200 :body "{}"})
+
+                  pyregence.match-drop/parse-available-wx-dates
+                  (constantly {})]
+      (get-md-available-dates nil)
+      @url)))
+
+(deftest sig3-calls-go-to-corespeq-when-targeted
+  (testing "with :sig3-target :corespeq, sig3 calls go to the :corespeq endpoint"
+    (is (= "https://corespeq.test/api/get-available-wx-times"
+           (sig3-url-for-target :corespeq)))))
+
+(deftest sig3-calls-go-to-gke-when-targeted
+  (testing "with :sig3-target :gke, sig3 calls go to the :gke endpoint"
+    (is (= "http://gke.test/api/get-available-wx-times"
+           (sig3-url-for-target :gke)))))

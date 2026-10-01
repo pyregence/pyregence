@@ -28,6 +28,9 @@
          [k (get-md-config k)])
        (into {})))
 
+(defn- get-sig3-endpoint []
+  (get (get-md-config :sig3-endpoints) (get-md-config :sig3-target)))
+
 (defn- cawfe-artefact-storage-configured?
   "Whether this environment names the storage prefix for CAWFE run artifacts."
   []
@@ -477,7 +480,7 @@
 (defn- create-match-job!
   [{:keys [user-id] :as params}]
   {:pre [(integer? user-id)]}
-  (let [sig3-endpoint (get-config :triangulum.views/client-keys :features :sig3-endpoint)]
+  (let [sig3-endpoint (get-sig3-endpoint)]
     (create-match-job-using-kubernetes! params sig3-endpoint)))
 
 ;;==============================================================================
@@ -618,7 +621,7 @@
   [{:keys [user-id]} match-job-unique-id]
   (let [job (get-match-job-from-uuid! match-job-unique-id)]
     (if (and job (= user-id (:user-id job)))
-      (let [sig3-endpoint (get-config :triangulum.views/client-keys :features :sig3-endpoint)]
+      (let [sig3-endpoint (get-sig3-endpoint)]
         (delete-match-drop-using-kubernetes! sig3-endpoint (:match-job-id job)))
       (data-response "You are not authorized to delete this match drop." {:status 403}))))
 
@@ -639,7 +642,7 @@
     :forecast   {:min-date-iso-str \"2023-06-04T00:00Z\"
                  :max-date-iso-str \"2023-06-07T18:00Z\"}"
   [_]
-  (let [sig3-endpoint (get-config :triangulum.views/client-keys :features :sig3-endpoint)
+  (let [sig3-endpoint (get-sig3-endpoint)
         api-url       (format "%s/api/get-available-wx-times" sig3-endpoint)
         http-request  {:headers {"sig-auth" (get-md-config :sig3-auth)}}
         _             (println "GET" api-url)

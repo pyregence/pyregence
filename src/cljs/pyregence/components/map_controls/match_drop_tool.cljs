@@ -189,8 +189,7 @@
                                             :display-name display-name
                                             :status       :failed}))
               (reset! poll? false))
-          (let [text (if (c/feature-enabled? :sig3-endpoint) job-log message)]
-            (set-message-box-content! (body-for-match-drop-modal text)))))
+          (set-message-box-content! (body-for-match-drop-modal job-log))))
       (<! (timeout 5000)))))
 
 (defn- initiate-match-drop!
