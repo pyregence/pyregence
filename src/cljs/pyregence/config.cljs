@@ -650,7 +650,7 @@
                                                               [:br]
                                                               [:br]
                                                               [:strong "Hybrid"]
-                                                              " - Blend of HRRR, RRFS, and GFS 0.125\u00B0 to 8 days."
+                                                              " - Blend of HRRR, NAM 3 km, and GFS 0.125\u00B0 to 8 days."
                                                               [:br]
                                                               [:br]
                                                               [:strong "GFS 0.125\u00B0"]
@@ -659,6 +659,14 @@
                                                               [:br]
                                                               [:strong "GFS 0.250\u00B0"]
                                                               " - Global Forecast System at 0.250\u00B0 (approx 26 km) resolution to 16 days."
+                                                              [:br]
+                                                              [:br]
+                                                              [:strong "NAM 12 km"]
+                                                              " - North American Mesoscale Model at 12 km resolution to 84 hours."
+                                                              [:br]
+                                                              [:br]
+                                                              [:strong "NAM 3 km"]
+                                                              " -  North American Mesoscale Model at 3 km resolution to 60 hours."
                                                               [:br]
                                                               [:br]
                                                               [:strong "CANSAC WRF"]
@@ -704,6 +712,12 @@
                                                               :gfs0p25       {:opt-label    "GFS 0.250\u00B0"
                                                                               :filter       "gfs0p25"
                                                                               :disabled-for #{:tmp :smoke :tcdc}}
+                                                              :nam-awip12    {:opt-label    "NAM 12 km"
+                                                                              :filter       "nam-awip12"
+                                                                              :disabled-for #{:tmp :apcp01 :smoke :tcdc}}
+                                                              :nam-conusnest {:opt-label    "NAM 3 km"
+                                                                              :filter       "nam-conusnest"
+                                                                              :disabled-for #{:tmp :smoke}}
                                                               :cansac-wrf    {:opt-label    "CANSAC WRF"
                                                                               :filter       "cansac-wrf"
                                                                               :disabled-for #{:tmp :apcp01 :smoke :tcdc}}
@@ -951,7 +965,7 @@
                                     :weather    {:opt-label  "Weather Model"
                                                  :hover-text [:p {:style {:margin-bottom "0"}}
                                                               [:strong "Hybrid"]
-                                                              " - Blend of HRRR, RRFS, and GFS 0.125\u00B0 to 8 days."
+                                                              " - Blend of HRRR, NAM 3 km, and GFS 0.125\u00B0 to 8 days."
                                                               [:br]
                                                               [:br]
                                                               [:strong "NAM"]
