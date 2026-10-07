@@ -48,7 +48,7 @@
           (if success
             (do (toast-message! "Your password has been reset successfully.")
                 (<! (timeout 2000))
-                (u-browser/jump-to-url! "/forecast"))
+                (u-browser/jump-to-url! (or (u-data/second-factor-url body) "/forecast")))
             (do (toast-message! (or (u-data/server-errors body)
                                     "Error resetting password."))
                 (reset! pending? false))))))))

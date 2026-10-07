@@ -9,6 +9,7 @@
             [pyregence.totp             :as totp]
             [pyregence.utils            :refer [nil-on-error ->uuid]]
             [pyregence.validation       :as v]
+            [ring.util.codec            :refer [form-encode]]
             [triangulum.config          :refer [get-config]]
             [triangulum.logging         :refer [log-str]]
             [triangulum.database        :refer [call-sql sql-primitive insert-rows!]]
@@ -135,6 +136,31 @@
    (call-sql "set_user_session_invalidated_at" user_id (clock/now))
    (create-session-from-user-data user)))
 
+(defn- owed-second-factor
+  "The second factor account `user-id` uses, :totp or :email, or nil."
+  [user-id]
+  (#{:totp :email} (:two-factor (get-user-settings user-id))))
+
+(defn- await-second-factor!
+  "Marks `session` as waiting, from `now`, for `user`'s second factor, mailing the code for :email.
+   A failed send is only logged, since the code page can resend."
+  [session {:keys [user_email] :as user} method now]
+  (when (= :email method)
+    (try (email/send-email! nil user_email :2fa)
+         (catch Exception e (log-str "Sending the 2FA code failed: " (ex-message e)))))
+  (session/awaiting-2fa session user now))
+
+(defn- second-factor-url [user-email method]
+  (str "/verify-2fa?email=" (form-encode user-email) "&method=" (name method)))
+
+(defn- log-in-or-await-second-factor
+  "Logs `user` in, or answers with the code page's path when a second factor is owed."
+  [session user now]
+  (if-let [method (owed-second-factor (:user_id user))]
+    (data-response {:second-factor-url (second-factor-url (:user_email user) method)}
+                   {:session (await-second-factor! session user method now)})
+    (successful-login user session)))
+
 (defn log-in
   "Authenticates user and determines 2FA requirements.
 
@@ -149,12 +175,7 @@
       (if-let [user (first (call-sql "verify_user_login" {:log? false} email password))]
         (do
           (throttle/forgive! [:password normalized-email])
-          (let [awaiting (session/awaiting-2fa session user (System/currentTimeMillis))]
-            (case (:two-factor (get-user-settings (:user_id user)))
-              :totp  (data-response {:email email :require-2fa true :method "totp"} {:session awaiting})
-              :email (do (email/send-email! nil email :2fa)
-                         (data-response {:email email :require-2fa true :method "email"} {:session awaiting}))
-              (successful-login user session))))
+          (log-in-or-await-second-factor session user (clock/now)))
         (data-response "Invalid login credentials" {:status 403})))))
 
 (defn marketplace-sso-login
@@ -163,19 +184,11 @@
   [request]
   (try
     (if-let [{:keys [user session]} (marketplace/sso-login request)]
-      (let [user-id    (:user_id user)
-            two-factor (:two-factor (get-user-settings user-id))
-            awaiting   (session/awaiting-2fa session user (System/currentTimeMillis))]
-        (case two-factor
-          :totp  {:status  302
-                  :headers {"Location" (str "/verify-2fa?email=" (:user_email user) "&method=totp")}
-                  :session awaiting}
-          :email (do (email/send-email! nil (:user_email user) :2fa)
-                     {:status  302
-                      :headers {"Location" (str "/verify-2fa?email=" (:user_email user) "&method=email")}
-                      :session awaiting})
-          (let [resp (successful-login user session)]
-            (assoc resp :status 302 :headers {"Location" "/"}))))
+      (if-let [method (owed-second-factor (:user_id user))]
+        {:status  302
+         :headers {"Location" (second-factor-url (:user_email user) method)}
+         :session (await-second-factor! session user method (clock/now))}
+        (assoc (successful-login user session) :status 302 :headers {"Location" "/"}))
       {:status  302
        :headers {"Location" "/login?marketplace=1"}})
     (catch Exception e
@@ -246,7 +259,8 @@
   )
 
 (defn set-user-password
-  "Sets a new password for user with valid reset token.
+  "Sets a new password for user with valid reset token, then logs them in or asks for the second
+   factor.
 
    Throws a `pyregence.validation` exception carrying every violated policy
    condition when the new password is unacceptable; `clj-handler` propagates
@@ -254,16 +268,19 @@
   [session email password token]
   (v/normalize-password password)
   (if-let [user (first (call-sql "set_user_password" {:log? false} email password token))]
-    (do
+    (let [now (clock/now)]
       (throttle/forgive! [:password (normalize-email email)])
-      (successful-login user session))
+      ;; End old sessions now, even when a code is still owed.
+      (call-sql "set_user_session_invalidated_at" (:user_id user) now)
+      (log-in-or-await-second-factor session user now))
     (data-response "Invalid or expired reset token" {:status 403})))
 
 (defn verify-user-email
-  "Verifies user email with the provided token."
+  "Verifies the user's email with the emailed token, then logs them in or asks for the second
+   factor."
   [session email token]
   (if-let [user (first (call-sql "verify_user_email" {:log? false} email token))]
-    (successful-login user session)
+    (log-in-or-await-second-factor session user (clock/now))
     (data-response "Invalid or expired verification token" {:status 403})))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -275,7 +292,7 @@
    them in. Every rejection answers the same way, so the response says nothing about how the account
    is set up."
   [session {:keys [user-id user-email]} code]
-  (or (case (:two-factor (get-user-settings user-id))
+  (or (case (owed-second-factor user-id)
         :totp  (when-let [{:keys [secret] :as user} (first (call-sql "get_user_with_totp" user-id))]
                  (when (or (totp/validate-totp-code secret code)
                            (sql-primitive (call-sql "use_backup_code" {:log? false} user-id code)))
@@ -286,11 +303,11 @@
       (data-response "Invalid code" {:status 403})))
 
 (defn verify-2fa
-  "Verifies the second factor for whoever the session's `log-in` marker names.
+  "Verifies the second factor for whoever the session's marker names.
 
    The `email` argument is ignored. The page still sends it and the marker decides who is verified."
   [session _email code]
-  (if-let [{:keys [user-id user-email] :as user} (session/pending-user session (System/currentTimeMillis))]
+  (if-let [{:keys [user-id user-email] :as user} (session/pending-user session (clock/now))]
     (if (throttle/over-budget? (throttle/spend! [:2fa user-id]))
       (data-response "Too many attempts" {:status 429})
       (let [response (check-2fa-code session user code)]
@@ -303,10 +320,10 @@
 
 ^:rct/test
 (comment
-  ;; `log-in` leaves the marker, so every case here mints one the same way.
+  ;; Every way in leaves this marker when a code is owed, so each case mints it the same way.
 
   ;; No session, an anonymous one, and a marker past its fuse all answer alike: nobody to verify.
-  (let [now   (System/currentTimeMillis)
+  (let [now   (clock/now)
         stale (update (session/awaiting-2fa {} {:user_id 24 :user_email "totp-2fa@pyr.dev"} now)
                       :pending-2fa assoc :expires-at now)]
     (mapv #(:status (verify-2fa % "totp-2fa@pyr.dev" "123456")) [nil {} stale]))
@@ -314,7 +331,7 @@
 
   ;; A wrong code with a good marker is refused. Every rejection answers with this same body,
   ;; which says nothing about how the account is set up.
-  (verify-2fa (session/awaiting-2fa {} {:user_id 24 :user_email "totp-2fa@pyr.dev"} (System/currentTimeMillis))
+  (verify-2fa (session/awaiting-2fa {} {:user_id 24 :user_email "totp-2fa@pyr.dev"} (clock/now))
               "totp-2fa@pyr.dev"
               "wrong")
   ;=>> {:status 403 :body "\"Invalid code\""}
@@ -327,7 +344,7 @@
         _                 (call-sql "create_totp_setup" user-id "JBSWY3DPEHPK3PXP")
         _                 (call-sql "mark_totp_verified" user-id)
         secret            (:secret (first (call-sql "get_totp_setup" user-id)))
-        marked            (session/awaiting-2fa {} {:user_id user-id :user_email "totp-2fa@pyr.dev"} (System/currentTimeMillis))]
+        marked            (session/awaiting-2fa {} {:user_id user-id :user_email "totp-2fa@pyr.dev"} (clock/now))]
     (try
       (verify-2fa marked "totp-2fa@pyr.dev" (str (totp/get-current-totp-code secret)))
       (finally
@@ -339,7 +356,7 @@
         _       (call-sql "update_user_settings" user-id (pr-str {:timezone :utc :two-factor :totp}))
         _       (call-sql "delete_backup_codes" user-id)
         _       (call-sql "create_backup_codes" user-id (into-array ["TESTCODE"]))
-        marked  (session/awaiting-2fa {} {:user_id user-id :user_email "totp-2fa@pyr.dev"} (System/currentTimeMillis))]
+        marked  (session/awaiting-2fa {} {:user_id user-id :user_email "totp-2fa@pyr.dev"} (clock/now))]
     (try
       (verify-2fa marked "totp-2fa@pyr.dev" "TESTCODE")
       (finally
@@ -350,12 +367,12 @@
   (let [_      (email/mock-send-2fa-code "email-2fa@pyr.dev")
         token  (with-out-str (email/mock-send-2fa-code "email-2fa@pyr.dev"))
         code   (second (re-find #"2FA CODE for .* : (\d+)" token))
-        marked (session/awaiting-2fa {} {:user_id 23 :user_email "email-2fa@pyr.dev"} (System/currentTimeMillis))]
+        marked (session/awaiting-2fa {} {:user_id 23 :user_email "email-2fa@pyr.dev"} (clock/now))]
     (verify-2fa marked "email-2fa@pyr.dev" code))
   ;=>> {:status 200 :session some?}
 
   ;; An account with no second factor is refused exactly like a wrong code.
-  (verify-2fa (session/awaiting-2fa {} {:user_id 2 :user_email "user@pyr.dev"} (System/currentTimeMillis))
+  (verify-2fa (session/awaiting-2fa {} {:user_id 2 :user_email "user@pyr.dev"} (clock/now))
               "user@pyr.dev"
               "123456")
   ;=>> {:status 403 :body "\"Invalid code\""}
