@@ -14,7 +14,8 @@
    [pyregence.utils.async-utils                    :as u-async]
    [pyregence.utils.time_utils                     :as u-time]
    [pyregence.weather-stations.observations        :as observations]
-   [reagent.core                                   :as r]))
+   [reagent.core                                   :as r]
+   [clojure.edn                                    :as edn]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Helper Functions
@@ -181,13 +182,34 @@
                                       (go
                                         (when-let [new-weather-station (js->clj (aget features "properties")  :keywordize-keys true)]
                                           (reset! weather-station new-weather-station)
-                                          (let [observation-chan (-> new-weather-station
-                                                                     observations/weather-station-response->observation-url
-                                                                     fetch!)]
+                                          (let [{:keys [network stn_id]} @weather-station
+                                                {:keys [numberReturned] :as response}
+                                                (-> @weather-station
+                                                    observations/weather-station-response->observation-url
+                                                    fetch!
+                                                    <!)]
                                             (reset! latest-observation
-                                                    (or
-                                                     (-> (<! observation-chan) observations/response->observations)
-                                                     :error))))))
+                                                    (if (and (zero? numberReturned) (or network stn_id))
+                                                      (let [{:keys [name_en msc_id]} @weather-station
+                                                            {:keys [body status] :as res}
+                                                            (<! (u-async/call-clj-async! "get-observations-from-ca-xml-server" @weather-station))
+                                                              ;; this is done so we can pull out the timestamp... reconsider where the work should be done, maybe on the server?
+                                                            all-observations (-> body edn/read-string)
+                                                            observations
+                                                            (->
+                                                             all-observations
+                                                             pyregence.weather-stations.observations.CA/xml-properties->display-name->value-with-uom)]
+                                                        (if (not= 200 status)
+                                                          :error
+                                                          {:station
+                                                             ;;TODO these can come from the meta data we have
+                                                           {:name name_en
+                                                            :id   msc_id
+                                                              ;;this has the from the data we have
+                                                            :timestamp (-> all-observations :date_tm :value)}
+                                                           :observations observations}))
+                                                      (or (-> response observations/response->observations)
+                                                          :error)))))))
                ;; TODO, this form is sloppy.  Maybe return some value to store or convert to form 3 component.
                _                    (take! (mb/create-weather-station-layer! "weather-stations")
                                            #(mb/add-feature-highlight!

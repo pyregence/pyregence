@@ -130,6 +130,9 @@
    [:post "/clj/get-current-user-organization"]      {:handler (clj-handler authentication/get-current-user-organization)
                                                      :auth-type #{:member :token}
                                                      :auth-action :block}
+   [:post "/clj/get-observations-from-ca-xml-server"] {:handler (clj-handler weather-stations/get-observations-from-ca-xml-server)
+                                                        :auth-type #{:token :member}
+                                                        :auth-action :block}
    [:post "/clj/get-org-member-users"]               {:handler (clj-handler authentication/get-org-member-users)
                                                      :auth-type #{:organization-admin :tier2-pro :token}
                                                      :auth-action :block}
