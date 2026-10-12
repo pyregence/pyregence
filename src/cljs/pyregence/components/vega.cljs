@@ -117,7 +117,8 @@
                              (fn [_ data]
                                (when-let [hour (or (u-misc/try-js-aget data "datum" "datum" "hour")
                                                    (u-misc/try-js-aget data "datum" "hour"))]
-                                 (layer-click! hour))))))
+                                 ;; Vega hands the datum's hour back as a string.
+                                 (layer-click! (js/parseFloat hour)))))))
         (catch ExceptionInfo e (js/console.log (ex-cause e)))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

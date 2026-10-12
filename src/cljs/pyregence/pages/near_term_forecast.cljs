@@ -643,6 +643,15 @@
                                             (js/Object.values)
                                             (first)))))))
 
+(defn- hours-since-init
+  "Hours since model init, matching the `:hour` capabilities.clj stamps on
+   non-mosaic layers. Vega plots this as a quantitative axis, so it has to stay
+   numeric."
+  [model-init layer-time]
+  (/ (- (.getTime (u-time/js-date-from-string layer-time))
+        (.getTime (u-time/js-date-from-string (str model-init "0000"))))
+     1000.0 60 60))
+
 (defn- mosaic-point-entry
   "Builds one series entry from the timestep we asked for, rather than from a
    positional zip against @!/param-layers - a mosaic collapses param-layers to a
@@ -653,12 +662,7 @@
      :js-time js-time
      :date    (u-time/get-date-from-js js-time @!/show-utc?)
      :time    (u-time/get-time-from-js js-time @!/show-utc?)
-     ;; Hours since model init, matching the `:hour` capabilities.clj stamps on
-     ;; non-mosaic layers. Vega plots this as a quantitative axis, so it has to
-     ;; stay numeric.
-     :hour    (/ (- (.getTime js-time)
-                    (.getTime (u-time/js-date-from-string (str model-init "0000"))))
-                 1000.0 60 60)}))
+     :hour    (hours-since-init model-init layer-time)}))
 
 (def ^:private iso-instant-re
   ;; Rows are keyed off this rather than off line position because a layer whose
@@ -771,9 +775,15 @@
          (when on-complete (on-complete)))))))
 
 (defn- select-layer-by-hour! [hour]
-  (select-layer! (first (keep-indexed (fn [idx layer]
-                                        (when (= hour (:hour layer)) idx))
-                                      @!/param-layers))))
+  (let [{:keys [model-init times]} (current-layer)]
+    (select-layer! (first (if (seq times)
+                            ;; A mosaic is one param-layer, so its timesteps live in :times.
+                            (keep-indexed (fn [idx layer-time]
+                                            (when (= hour (hours-since-init model-init layer-time)) idx))
+                                          times)
+                            (keep-indexed (fn [idx layer]
+                                            (when (= hour (:hour layer)) idx))
+                                          @!/param-layers))))))
 
 (defn- clear-info! []
   (mb/remove-markers!)
