@@ -103,9 +103,18 @@
 (defn- get-layer-name-for-idx [idx]
   (:layer (layer-at-idx idx) ""))
 
+(defn- hours-since-init
+  "Hours since model init, matching the `:hour` capabilities.clj stamps on
+   non-mosaic layers. Vega plots this as a quantitative axis, so it has to stay
+   numeric."
+  [model-init layer-time]
+  (/ (- (.getTime (u-time/js-date-from-string layer-time))
+        (.getTime (u-time/js-date-from-string (str model-init "0000"))))
+     1000.0 60 60))
+
 (defn- get-current-layer-hour []
   (if-let [current-layer-time (get-current-layer-time)]
-    (second (re-find #"[0-9]{4}-[0-9]{2}-[0-9]{2}T([0-9]{2})" current-layer-time))
+    (hours-since-init (:model-init (current-layer)) current-layer-time)
     (:hour (current-layer) 0)))
 
 (defn- get-current-layer-full-time []
@@ -643,14 +652,6 @@
                                             (js/Object.values)
                                             (first)))))))
 
-(defn- hours-since-init
-  "Hours since model init, matching the `:hour` capabilities.clj stamps on
-   non-mosaic layers. Vega plots this as a quantitative axis, so it has to stay
-   numeric."
-  [model-init layer-time]
-  (/ (- (.getTime (u-time/js-date-from-string layer-time))
-        (.getTime (u-time/js-date-from-string (str model-init "0000"))))
-     1000.0 60 60))
 
 (defn- mosaic-point-entry
   "Builds one series entry from the timestep we asked for, rather than from a
