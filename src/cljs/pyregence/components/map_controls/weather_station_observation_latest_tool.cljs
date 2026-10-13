@@ -192,22 +192,19 @@
                                                     (if (and (zero? numberReturned) (or network stn_id))
                                                       (let [{:keys [name_en msc_id]} @weather-station
                                                             {:keys [body status]}
-                                                            (<! (u-async/call-clj-async! "get-observations-from-ca-xml-server" @weather-station))
-                                                              ;; this is done so we can pull out the timestamp... reconsider where the work should be done, maybe on the server?
-                                                            all-observations (some-> body edn/read-string)
-                                                            observations
-                                                            (some->
-                                                             all-observations
-                                                             pyregence.weather-stations.observations.CA/xml-properties->display-name->value-with-uom)]
+                                                            (<! (u-async/call-clj-async! "get-observations-from-ca-xml-server" @weather-station))]
                                                         (if (not= 200 status)
                                                           :error
-                                                          {:station
-                                                             ;;TODO these can come from the meta data we have
-                                                           {:name name_en
-                                                            :id   msc_id
-                                                              ;;this has the from the data we have
-                                                            :timestamp (-> all-observations :date_tm :value)}
-                                                           :observations observations}))
+                                                          (let [all-observations (some-> body edn/read-string)
+                                                                observations
+                                                                (some->
+                                                                 all-observations
+                                                                 pyregence.weather-stations.observations.CA/xml-properties->display-name->value-with-uom)]
+                                                            {:station
+                                                             {:name name_en
+                                                              :id   msc_id
+                                                              :timestamp (-> all-observations :date_tm :value)}
+                                                             :observations observations})))
                                                       (or (some-> response observations/response->observations)
                                                           :error)))))))
                ;; TODO, this form is sloppy.  Maybe return some value to store or convert to form 3 component.
