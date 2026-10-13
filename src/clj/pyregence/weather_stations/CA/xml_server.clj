@@ -1,12 +1,10 @@
 (ns pyregence.weather-stations.CA.xml-server
   (:require
-   [clj-http.client     :as client]
    [clojure.string      :as str]
    [clojure.walk        :as walk]
    [hickory.core        :as hick]
    [pyregence.utils     :refer [url->response-body! xml-str->safe-parse-str]]
    [triangulum.response :refer [data-response]])
-
   (:import
    [java.time ZoneOffset ZonedDateTime]
    [java.time.format DateTimeFormatter]))
