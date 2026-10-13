@@ -132,8 +132,8 @@
                                                      :auth-type #{:member :token}
                                                      :auth-action :block}
    [:post "/clj/get-observations-from-ca-xml-server"] {:handler (clj-handler ca-xml-server/get-observations)
-                                                        :auth-type #{:token :member}
-                                                        :auth-action :block}
+                                                       :auth-type #{:token :member}
+                                                       :auth-action :block}
    [:post "/clj/get-org-member-users"]               {:handler (clj-handler authentication/get-org-member-users)
                                                      :auth-type #{:organization-admin :tier2-pro :token}
                                                      :auth-action :block}

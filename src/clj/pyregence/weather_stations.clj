@@ -1,7 +1,7 @@
 (ns pyregence.weather-stations
   (:require
    [clj-http.client                          :as client]
-   [pyregence.weather-stations.CA.xml-server :as ca-xml-server]
+   [pyregence.weather-stations.CA.servers    :as ca-servers]
    [triangulum.config                        :refer [get-config]]
    [triangulum.logging                       :refer [log log-str]]))
 
@@ -46,7 +46,7 @@
               (update :properties assoc :longitude lon :latitude lat)))]
     (reset! observation-stations
             (->> (get-US-observation-stations!)
-                 (concat (ca-xml-server/get-observation-stations!))
+                 (concat (ca-servers/get-observation-stations!))
                  ;;TODO consider moving `select-relevent-properties` into two fns attached to our get-us get-ca
                  (map select-relevent-properties)))))
 

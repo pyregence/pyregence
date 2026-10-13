@@ -191,12 +191,12 @@
                                             (reset! latest-observation
                                                     (if (and (zero? numberReturned) (or network stn_id))
                                                       (let [{:keys [name_en msc_id]} @weather-station
-                                                            {:keys [body status] :as res}
+                                                            {:keys [body status]}
                                                             (<! (u-async/call-clj-async! "get-observations-from-ca-xml-server" @weather-station))
                                                               ;; this is done so we can pull out the timestamp... reconsider where the work should be done, maybe on the server?
-                                                            all-observations (-> body edn/read-string)
+                                                            all-observations (some-> body edn/read-string)
                                                             observations
-                                                            (->
+                                                            (some->
                                                              all-observations
                                                              pyregence.weather-stations.observations.CA/xml-properties->display-name->value-with-uom)]
                                                         (if (not= 200 status)
@@ -208,7 +208,7 @@
                                                               ;;this has the from the data we have
                                                             :timestamp (-> all-observations :date_tm :value)}
                                                            :observations observations}))
-                                                      (or (-> response observations/response->observations)
+                                                      (or (some-> response observations/response->observations)
                                                           :error)))))))
                ;; TODO, this form is sloppy.  Maybe return some value to store or convert to form 3 component.
                _                    (take! (mb/create-weather-station-layer! "weather-stations")
