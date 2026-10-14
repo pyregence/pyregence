@@ -97,10 +97,13 @@
                                                  :legend false}}}
                             ; The black point to show the currently selected hour (point)
                             {:transform [{:filter {:field "hour" :equal current-hour}}]
-                             :mark      {:type   "point"
-                                         :filled false
-                                         :fill   "black"
-                                         :stroke "black"}
+                             ;; Vega-Lite points default to 0.7 opacity, so overlapping
+                             ;; neighbours on a dense series showed through the dot.
+                             :mark      {:type    "point"
+                                         :filled  false
+                                         :fill    "black"
+                                         :stroke  "black"
+                                         :opacity 1}
                              :encoding  {:size {:condition {:selection :point-hover :value 150}
                                                 :value     75}}}]}]}))
 
