@@ -283,50 +283,51 @@
                                                                                          :landfire-1.0.5 :landfire-1.3.0 :landfire-1.4.0
                                                                                          :landfire-2.0.0 :landfire-2.1.0 :landfire-2.2.0
                                                                                          :landfire-2.3.0 :landfire-2.4.0 :landfire-2.5.0
-                                                                                         :landfire-2.5.0-2.4.0}}
+                                                                                        :landfire-2.5.0-2.4.0 :landfire-2.4.0-hi
+                                                                                        :landfire-2.5.0-ak :sig-alphaearth-2025}}
                                                             :asp    {:opt-label       "Aspect"
                                                                      :filter          "asp"
                                                                      :units           ""
                                                                      :convert         #(str (u-misc/direction %) " (" % "°)")
                                                                      :reverse-legend? false
-                                                                     :disabled-for    #{:cecs :cfo :fire-factor-2022 :fire-factor-2023 :fire-factor-2024 :landfire-1.0.5 :landfire-1.3.0 :landfire-1.4.0 :landfire-2.0.0 :landfire-2.1.0 :landfire-2.3.0 :landfire-2.4.0 :landfire-2.5.0-2.4.0 :landfire-2.5.0}}
+                                                                     :disabled-for    #{:cecs :cfo :fire-factor-2022 :fire-factor-2023 :fire-factor-2024 :landfire-1.0.5 :landfire-1.3.0 :landfire-1.4.0 :landfire-2.0.0 :landfire-2.1.0 :landfire-2.3.0 :landfire-2.4.0 :landfire-2.5.0-2.4.0 :landfire-2.5.0 :sig-alphaearth-2025}}
                                                             :slp    {:opt-label       "Slope"
                                                                      :filter          "slp"
                                                                      :units           "\u00B0"
                                                                      :reverse-legend? true
-                                                                     :disabled-for    #{:cecs :cfo :fire-factor-2022 :fire-factor-2023 :fire-factor-2024 :landfire-1.0.5 :landfire-1.3.0 :landfire-1.4.0 :landfire-2.0.0 :landfire-2.1.0 :landfire-2.3.0 :landfire-2.4.0 :landfire-2.5.0-2.4.0 :landfire-2.5.0}}
+                                                                     :disabled-for    #{:cecs :cfo :fire-factor-2022 :fire-factor-2023 :fire-factor-2024 :landfire-1.0.5 :landfire-1.3.0 :landfire-1.4.0 :landfire-2.0.0 :landfire-2.1.0 :landfire-2.3.0 :landfire-2.4.0 :landfire-2.5.0-2.4.0 :landfire-2.5.0 :landfire-2.4.0-hi :landfire-2.5.0-ak :sig-alphaearth-2025}}
                                                             :dem    {:opt-label       "Elevation"
                                                                      :filter          "dem"
                                                                      :units           "ft"
                                                                      :convert         #(u-num/to-precision 1 (* % 3.28084))
                                                                      :reverse-legend? true
-                                                                     :disabled-for    #{:cecs :cfo :fire-factor-2022 :fire-factor-2023 :fire-factor-2024 :landfire-1.0.5 :landfire-1.3.0 :landfire-1.4.0 :landfire-2.0.0 :landfire-2.1.0 :landfire-2.3.0 :landfire-2.4.0 :landfire-2.5.0-2.4.0 :landfire-2.5.0}}
+                                                                     :disabled-for    #{:cecs :cfo :fire-factor-2022 :fire-factor-2023 :fire-factor-2024 :landfire-1.0.5 :landfire-1.3.0 :landfire-1.4.0 :landfire-2.0.0 :landfire-2.1.0 :landfire-2.3.0 :landfire-2.4.0 :landfire-2.5.0-2.4.0 :landfire-2.5.0 :sig-alphaearth-2025}}
                                                             :cc     {:opt-label       "Canopy Cover"
                                                                      :filter          "cc"
                                                                      :units           "%"
                                                                      :reverse-legend? true
-                                                                     :disabled-for    #{:cecs :cffdrs-2024}}
+                                                                     :disabled-for    #{:cecs :cffdrs-2024 :sig-alphaearth-2025}}
                                                             :ch     {:opt-label       "Canopy Height"
                                                                      :filter          "ch"
                                                                      :units           "m"
                                                                      :no-convert      #{:cfo}
                                                                      :convert         #(u-num/to-precision 1 (/ % 10))
                                                                      :reverse-legend? true
-                                                                     :disabled-for    #{:cecs :cffdrs-2024}}
+                                                                     :disabled-for    #{:cecs :cffdrs-2024 :sig-alphaearth-2025}}
                                                             :cbh    {:opt-label       "Canopy Base Height"
                                                                      :filter          "cbh"
                                                                      :units           "m"
                                                                      :no-convert      #{:cfo}
                                                                      :convert         #(u-num/to-precision 1 (/ % 10))
                                                                      :reverse-legend? true
-                                                                     :disabled-for    #{:cecs :cffdrs-2024}}
+                                                                     :disabled-for    #{:cecs :cffdrs-2024 :sig-alphaearth-2025}}
                                                             :cbd    {:opt-label       "Crown Bulk Density"
                                                                      :filter          "cbd"
                                                                      :units           "kg/m\u00b3"
                                                                      :convert         #(u-num/to-precision 2 (/ % 100))
                                                                      :no-convert      #{:cfo}
                                                                      :reverse-legend? true
-                                                                     :disabled-for    #{:cecs :cffdrs-2024}})}
+                                                                     :disabled-for    #{:cecs :cffdrs-2024 :sig-alphaearth-2025}})}
                                   :model      {:opt-label      "Source"
                                                ;; cffdrs-2024 is first in :options (so it renders at the top),
                                                ;; but it is incompatible with the default :fbfm40 layer. Pin the
@@ -343,6 +344,12 @@
                                                                  :target "_blank"}
                                                              "this link"]
                                                             " and click the \"LF Version Descriptions\" button."
+                                                            [:br]
+                                                            [:br]
+                                                            [:strong "SIG AlphaEarth 2025"]
+                                                            " - Developed using AlphaEarth satellite embeddings and a classifier trained "
+                                                            "on LANDFIRE’s 40 fire behavior fuel model classes. Spatial Informatics Group "
+                                                            "(SIG), 2026."
                                                             [:br]
                                                             [:br]
                                                             [:strong "California Forest Observatory"]
@@ -392,9 +399,15 @@
                                                             :landfire-2.5.0-2.4.0 {:opt-label    "LANDFIRE 2.5.0/2.4.0 (2025/2024 capable)"
                                                                                    :filter       "landfire-2.5.0-2.4.0"
                                                                                    :disabled-for #{:asp :slp :dem}}
+                                                            :landfire-2.5.0-ak    {:opt-label    "LANDFIRE 2.5.0 - Alaska"
+                                                                                   :filter       "landfire-2.5.0-ak"
+                                                                                   :disabled-for #{:fbp :slp}}
                                                             :landfire-2.4.0       {:opt-label    "LANDFIRE 2.4.0 (2024 capable)"
                                                                                    :filter       "landfire-2.4.0"
                                                                                    :disabled-for #{:asp :slp :dem}}
+                                                            :landfire-2.4.0-hi    {:opt-label    "LANDFIRE 2.4.0 - Hawaii"
+                                                                                   :filter       "landfire-2.4.0-hi"
+                                                                                   :disabled-for #{:fbp :slp}}
                                                             :landfire-2.3.0       {:opt-label    "LANDFIRE 2.3.0 (2023 capable)"
                                                                                    :filter       "landfire-2.3.0"
                                                                                    :disabled-for #{:asp :slp :dem}}
@@ -415,6 +428,9 @@
                                                             :landfire-1.0.5       {:opt-label    "LANDFIRE 1.0.5 (~2008 capable)"
                                                                                    :filter       "landfire-1.0.5"
                                                                                    :disabled-for #{:asp :slp :dem}}
+                                                            :sig-alphaearth-2025  {:opt-label    "SIG AlphaEarth 2025"
+                                                                                   :filter       "sig-alphaearth-2025"
+                                                                                   :disabled-for #{:fbp :asp :slp :dem :cc :ch :cbh :cbd}}
                                                             :cfo                  {:opt-label    "California Forest Obs."
                                                                                    :filter       "cfo-2020"
                                                                                    :disabled-for #{:asp :slp :dem}}
@@ -644,7 +660,7 @@
                                                               [:br]
                                                               [:br]
                                                               [:strong "Hybrid"]
-                                                              " - Blend of HRRR, NAM 3 km, and GFS 0.125\u00B0 to 8 days."
+                                                              " - Blend of HRRR, RRFS, and GFS 0.125\u00B0 to 8 days."
                                                               [:br]
                                                               [:br]
                                                               [:strong "GFS 0.125\u00B0"]
@@ -653,14 +669,6 @@
                                                               [:br]
                                                               [:strong "GFS 0.250\u00B0"]
                                                               " - Global Forecast System at 0.250\u00B0 (approx 26 km) resolution to 16 days."
-                                                              [:br]
-                                                              [:br]
-                                                              [:strong "NAM 12 km"]
-                                                              " - North American Mesoscale Model at 12 km resolution to 84 hours."
-                                                              [:br]
-                                                              [:br]
-                                                              [:strong "NAM 3 km"]
-                                                              " -  North American Mesoscale Model at 3 km resolution to 60 hours."
                                                               [:br]
                                                               [:br]
                                                               [:strong "CANSAC WRF"]
@@ -706,12 +714,6 @@
                                                               :gfs0p25       {:opt-label    "GFS 0.250\u00B0"
                                                                               :filter       "gfs0p25"
                                                                               :disabled-for #{:tmp :smoke :tcdc}}
-                                                              :nam-awip12    {:opt-label    "NAM 12 km"
-                                                                              :filter       "nam-awip12"
-                                                                              :disabled-for #{:tmp :apcp01 :smoke :tcdc}}
-                                                              :nam-conusnest {:opt-label    "NAM 3 km"
-                                                                              :filter       "nam-conusnest"
-                                                                              :disabled-for #{:tmp :smoke}}
                                                               :cansac-wrf    {:opt-label    "CANSAC WRF"
                                                                               :filter       "cansac-wrf"
                                                                               :disabled-for #{:tmp :apcp01 :smoke :tcdc}}
@@ -959,7 +961,7 @@
                                     :weather    {:opt-label  "Weather Model"
                                                  :hover-text [:p {:style {:margin-bottom "0"}}
                                                               [:strong "Hybrid"]
-                                                              " - Blend of HRRR, NAM 3 km, and GFS 0.125\u00B0 to 8 days."
+                                                              " - Blend of HRRR, RRFS, and GFS 0.125\u00B0 to 8 days."
                                                               [:br]
                                                               [:br]
                                                               [:strong "NAM"]

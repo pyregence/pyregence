@@ -99,7 +99,6 @@
                                      :usage-terms-and-conditions-date "December 2, 2025"
                                      :features                        {:match-drop            true
                                                                        :cawfe                 true
-                                                                       :sig3-endpoint         "https://sig3.sig-gis-00.corespeq.com/"
                                                                        :fire-history          true
                                                                        :structures            true
                                                                        :pyretechnics          true
@@ -178,7 +177,10 @@
  :pyregence.auth/two-factor-window-min              15
  :pyregence.match-drop/match-drop                   {:sig3-auth           "<AUTH_TOKEN>"
                                                      :sig3-env            "<dev | prod | stg>"
-                                                     :max-queue-size      5}
+                                                     :cawfe-artefacts-dir "s3://owo/cawfe/match-drop/<dev | prod | stg>/artefacts"
+                                                     :max-queue-size      5
+                                                     :sig3-target         :corespeq
+                                                     :sig3-endpoints      {:corespeq "https://sig3.sig-gis-00.corespeq.com/"}}
  ;; Marketplace (e.g. audience "example.com", partner-id "my-project-123")
  :pyregence.marketplace/config {:enabled              false
                                 :audience             "<your-app-domain>"
