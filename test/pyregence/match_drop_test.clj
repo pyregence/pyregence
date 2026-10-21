@@ -376,17 +376,16 @@
            (sig3-url-for-target :gke)))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; :sig3-org-targets (PYR1-1842)
+;; :sig3-org-endpoints (PYR1-1842)
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn- sig3-tenant-config [& ks]
   (case (vec ks)
-    [:pyregence.match-drop/match-drop :sig3-target]      :corespeq
-    [:pyregence.match-drop/match-drop :sig3-endpoints]   {:corespeq   "https://corespeq.test"
-                                                          :consortium "https://consortium.test"}
-    [:pyregence.match-drop/match-drop :sig3-auth]        "corespeq-token"
-    [:pyregence.match-drop/match-drop :sig3-auths]       {:consortium "consortium-token"}
-    [:pyregence.match-drop/match-drop :sig3-org-targets] {"pyregence-consortium" :consortium}
+    [:pyregence.match-drop/match-drop :sig3-target]        :corespeq
+    [:pyregence.match-drop/match-drop :sig3-endpoints]     {:corespeq "https://corespeq.test"}
+    [:pyregence.match-drop/match-drop :sig3-auth]          "corespeq-token"
+    [:pyregence.match-drop/match-drop :sig3-org-endpoints] {"pyregence-consortium" {:url  "https://consortium.test"
+                                                                                    :auth "consortium-token"}}
     nil))
 
 (defn- sig3-post-for-org
