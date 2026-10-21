@@ -32,16 +32,15 @@
   (get (get-md-config :sig3-endpoints) (get-md-config :sig3-target)))
 
 (defn- get-sig3
-  "The sig3 endpoint and token for an org. Orgs not in :sig3-org-targets, and no
+  "The sig3 endpoint and token for an org. Orgs not in :sig3-org-endpoints, and no
    org, use :sig3-target with :sig3-auth. A tenant never falls back to :sig3-auth,
    so the corespeq token is not sent to another cluster."
   [org-unique-id]
-  (let [default-target (get-md-config :sig3-target)
-        target         (get (get-md-config :sig3-org-targets) org-unique-id default-target)]
-    {:endpoint (get (get-md-config :sig3-endpoints) target)
-     :auth     (if (= target default-target)
-                 (get-md-config :sig3-auth)
-                 (get (get-md-config :sig3-auths) target))}))
+  (if-let [{:keys [url auth]} (get (get-md-config :sig3-org-endpoints) org-unique-id)]
+    {:endpoint url
+     :auth     auth}
+    {:endpoint (get-sig3-endpoint)
+     :auth     (get-md-config :sig3-auth)}))
 
 (defn- cawfe-artefact-storage-configured?
   "Whether this environment names the storage prefix for CAWFE run artifacts."
