@@ -208,14 +208,13 @@
 
 (defn- faa-make-sites-api-request!
   "Make a synchronous request to the FAA camera sites API,
-  and return the response."
+  and return the response, whatever its status."
   []
-  (client/get faa-sites-api-url))
+  (client/get faa-sites-api-url {:throw-exceptions false}))
 
 (defn- faa-response->sites-collection
   "Extract the list of sites from a successful response,
-  or return nil and log on a failed request. Remove sites
-  that are inactive or have no working cameras."
+  or return nil and log on a failed request."
   [{:keys [status body] :as response}]
   (if (= 200 status)
     (let [sites (try
@@ -224,6 +223,26 @@
                     (log-str "ERROR: Unable to read JSON response from FAA cameras API.")))]
       sites)
     (log-str "WARN: request to FAA cameras api failed with status " status)))
+
+(defn- faa-site-usable?
+  "True for sites that are active and not under maintenance."
+  [{:keys [siteActive siteInMaintenance]}]
+  (and siteActive (not siteInMaintenance)))
+
+(defn- faa-camera-usable?
+  "True for cameras that are in service and have a current image on the FAA static host."
+  [{:keys [cameraInMaintenance cameraOutOfOrder currentImageUri]}]
+  (and (not cameraInMaintenance)
+       (not cameraOutOfOrder)
+       (string? currentImageUri)
+       (str/starts-with? currentImageUri faa-images-url)))
+
+(defn- faa-prune-sites
+  "Remove unusable sites, and unusable cameras from the remaining sites."
+  [sites]
+  (->> sites
+       (filter faa-site-usable?)
+       (map #(update % :cameras (partial filter faa-camera-usable?)))))
 
 (defn- faa-camera->feature
   "Map a camera item from the FAA api into a map feature."
@@ -251,29 +270,25 @@
           sites))
 
 (defn- faa-image-uri->proxy-uri
-  "Rewrite an FAA static image URI to the proxy's /images/ path.
-  nil for missing URIs or URIs outside the FAA static host."
+  "Rewrite an FAA static image URI to the proxy's /images/ path."
   [image-uri]
-  (when (and (string? image-uri)
-             (str/starts-with? image-uri faa-images-url))
-    (str (get-faa-proxy-url) "/images/" (subs image-uri (count faa-images-url)))))
+  (str (get-faa-proxy-url) "/images/" (subs image-uri (count faa-images-url))))
 
 (defn- faa-sites->camera-image-uris
-  "Map each FAA camera ID (as a string) to its current image URI on the proxy.
-  Cameras without a usable image URI are left out."
+  "Map each FAA camera ID (as a string) to its current image URI on the proxy."
   [sites]
   (into {}
         (for [{:keys [cameras]}                  sites
-              {:keys [cameraId currentImageUri]} cameras
-              :let  [proxy-uri (faa-image-uri->proxy-uri currentImageUri)]
-              :when proxy-uri]
-          [(str cameraId) proxy-uri])))
+              {:keys [cameraId currentImageUri]} cameras]
+          [(str cameraId) (faa-image-uri->proxy-uri currentImageUri)])))
 
 (defn- faa-get-camera-features!
-  "Fetches cameras from the FAA api. Returns a map of :features, the cameras
+  "Fetches usable cameras from the FAA api. Returns a map of :features, the cameras
   formatted as features, and :camera-image-uris, their proxied image URIs."
   []
-  (let [sites (faa-response->sites-collection (faa-make-sites-api-request!))]
+  (let [sites (-> (faa-make-sites-api-request!)
+                  (faa-response->sites-collection)
+                  (faa-prune-sites))]
     {:features          (vec (faa-sites->features-collection sites))
      :camera-image-uris (faa-sites->camera-image-uris sites)}))
 
@@ -301,11 +316,14 @@
 
 (defn- faa-current-image
   "Fetches the latest image of an FAA camera through the proxy, using the
-  image URI cached alongside the camera features."
+  image URI cached alongside the camera features. nil for unknown cameras
+  or failed requests."
   [camera-id]
   (when-let [image-uri (get-in (faa-get-camera-features-cached!) [:camera-image-uris camera-id])]
-    (let [{:keys [status body]} (client/get image-uri {:as :byte-array})]
-      (when (= 200 status) body))))
+    (let [{:keys [status body]} (client/get image-uri {:as :byte-array :throw-exceptions false})]
+      (if (= 200 status)
+        body
+        (log-str "WARN: request for FAA camera " camera-id " image failed with status " status)))))
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -329,8 +347,9 @@
   (case api-name
     "alert-west" (data-response (api-current-image camera-id alert-west-api-url (get-alert-west-api-defaults))
                                 {:type "image/jpeg"})
-    "faa"        (if (re-matches #"\d+" camera-id)
-                   (data-response (faa-current-image camera-id)
-                                  {:type "image/jpeg"})
-                   (data-response "Invalid FAA camera ID." {:status 403}))
+    "faa"        (if-not (re-matches #"\d+" camera-id)
+                   (data-response "Invalid FAA camera ID." {:status 403})
+                   (if-let [image (faa-current-image camera-id)]
+                     (data-response image {:type "image/jpeg"})
+                     (data-response "FAA camera image not available." {:status 404})))
     (data-response "Invalid cameras API name." {:status 403})))
