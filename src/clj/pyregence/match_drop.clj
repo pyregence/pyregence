@@ -36,7 +36,7 @@
    org, use :sig3-target with :sig3-auth. A tenant never falls back to :sig3-auth,
    so the corespeq token is not sent to another cluster."
   [org-unique-id]
-  (if-let [{:keys [url auth]} (get (get-md-config :sig3-org-endpoints) org-unique-id)]
+  (if-let [{:keys [url auth]} (get (get-md-config :sig3-org-endpoints) (keyword org-unique-id))]
     {:endpoint url
      :auth     auth}
     {:endpoint (get-sig3-endpoint)

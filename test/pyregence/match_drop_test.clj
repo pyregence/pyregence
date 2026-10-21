@@ -384,8 +384,8 @@
     [:pyregence.match-drop/match-drop :sig3-target]        :corespeq
     [:pyregence.match-drop/match-drop :sig3-endpoints]     {:corespeq "https://corespeq.test"}
     [:pyregence.match-drop/match-drop :sig3-auth]          "corespeq-token"
-    [:pyregence.match-drop/match-drop :sig3-org-endpoints] {"pyregence-consortium" {:url  "https://consortium.test"
-                                                                                    :auth "consortium-token"}}
+    [:pyregence.match-drop/match-drop :sig3-org-endpoints] {:pyregence-consortium {:url  "https://consortium.test"
+                                                                                   :auth "consortium-token"}}
     nil))
 
 (defn- sig3-post-for-org
