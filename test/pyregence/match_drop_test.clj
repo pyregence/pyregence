@@ -252,6 +252,7 @@
                         ;; main returns the row and renames its columns, rather than a bare id
                         "initialize_match_job"          [{:match_job_id 7 :org_id 3}]
                         "get_match_job"                 [{:match_job_id 7 :match_job_uuid job-uuid}]
+                        "get_match_job_org_unique_id"   [{:org_unique_id nil}]
                         nil))
 
                     clj-http.client/post
@@ -373,3 +374,83 @@
   (testing "with :sig3-target :gke, sig3 calls go to the :gke endpoint"
     (is (= "http://gke.test/api/get-available-wx-times"
            (sig3-url-for-target :gke)))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; :sig3-org-targets (PYR1-1842)
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn- sig3-tenant-config [& ks]
+  (case (vec ks)
+    [:pyregence.match-drop/match-drop :sig3-target]      :corespeq
+    [:pyregence.match-drop/match-drop :sig3-endpoints]   {:corespeq   "https://corespeq.test"
+                                                          :consortium "https://consortium.test"}
+    [:pyregence.match-drop/match-drop :sig3-auth]        "corespeq-token"
+    [:pyregence.match-drop/match-drop :sig3-auths]       {:consortium "consortium-token"}
+    [:pyregence.match-drop/match-drop :sig3-org-targets] {"pyregence-consortium" :consortium}
+    nil))
+
+(defn- sig3-post-for-org
+  "Submits a STANDARD match drop for a user whose org is `org-unique-id` and
+   returns the URL and sig-auth header of the submit-job POST."
+  [org-unique-id]
+  (let [post (atom nil)]
+    (with-redefs [triangulum.config/get-config sig3-tenant-config
+
+                  triangulum.database/call-sql
+                  (fn [f & _]
+                    (case f
+                      "initialize_match_job"        [{:match_job_id 7 :org_id (when org-unique-id 3)}]
+                      "get_match_job"               [{:match_job_id 7}]
+                      "get_match_job_org_unique_id" [{:org_unique_id org-unique-id}]
+                      nil))
+
+                  clj-http.client/post
+                  (fn [url {:keys [headers]}]
+                    (reset! post {:url url :auth (get headers "sig-auth")})
+                    (throw (ex-info "stop after the POST" {})))]
+      (#'pyregence.match-drop/create-match-job! (assoc md-params :user-id 1 :model "standard"))
+      @post)))
+
+(deftest consortium-match-drop-goes-to-its-tenant
+  (testing "a pyregence-consortium Match Drop is sent to the tenant with the tenant token"
+    (is (= {:url "https://consortium.test/api/submit-job" :auth "consortium-token"}
+           (sig3-post-for-org "pyregence-consortium")))))
+
+(deftest other-org-match-drop-goes-to-corespeq
+  (testing "an org with no tenant mapping uses :sig3-target and :sig3-auth"
+    (is (= {:url "https://corespeq.test/api/submit-job" :auth "corespeq-token"}
+           (sig3-post-for-org "some-other-org")))))
+
+(deftest no-org-match-drop-goes-to-corespeq
+  (testing "a user with no organization uses :sig3-target and :sig3-auth"
+    (is (= {:url "https://corespeq.test/api/submit-job" :auth "corespeq-token"}
+           (sig3-post-for-org nil)))))
+
+(deftest delete-follows-the-jobs-org
+  (testing "removing a consortium Match Drop goes to the tenant that ran it"
+    (let [post     (atom nil)
+          job-uuid #uuid "00000000-0000-0000-0000-0000000000ff"
+          job-row  [{:match_job_id        7
+                     :match_job_uuid      job-uuid
+                     :user_id             1
+                     :geoserver_workspace "match-drop-forecast_md-7_20260809_211500"
+                     :dps_request         "{}"}]]
+      (with-redefs [triangulum.config/get-config sig3-tenant-config
+
+                    triangulum.database/call-sql
+                    (fn [f & _]
+                      (case f
+                        "get_match_job_by_uuid"       job-row
+                        "get_match_job"               job-row
+                        "get_match_job_org_unique_id" [{:org_unique_id "pyregence-consortium"}]
+                        nil))
+
+                    pyregence.capabilities/layers-exist? (constantly true)
+
+                    clj-http.client/post
+                    (fn [url {:keys [headers]}]
+                      (reset! post {:url url :auth (get headers "sig-auth")})
+                      (throw (ex-info "stop after the POST" {})))]
+        (pyregence.match-drop/delete-match-drop! {:user-id 1} (str job-uuid))
+        (is (= {:url "https://consortium.test/api/submit-job" :auth "consortium-token"}
+               @post))))))
