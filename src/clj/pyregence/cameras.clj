@@ -26,7 +26,7 @@
 (defn- get-faa-proxy-url []
   (get-config ::faa-proxy-url))
 (def ^:private faa-sites-api-path "/api/redistributable/sites")
-(def ^:privaate faa-sites-api-url (str (get-faa-proxy-url) faa-sites-api-path))
+(def ^:private faa-sites-api-url (str (get-faa-proxy-url) faa-sites-api-path))
 
 (def ^:private faa-images-url "https://images.wcams-static.faa.gov/")
 
@@ -43,7 +43,7 @@
 ;; Structure:
 ;; {:faa {:timestamp (System/currentTimeMillis)
 ;;        :features [vector of Features]
-;;        :cameraImageURIs {map of processed image URIs, keyed by camera ID}}}
+;;        :camera-image-uris {map of proxied image URIs, keyed by camera ID string}}}
 (defonce ^:private camera-source-cache (atom {}))
 
 ;; Per-source cache TTL, in seconds
@@ -124,20 +124,6 @@
     (when (= 200 status)
       (:payload (json/read-str body :key-fn keyword)))))
 
-(defn- faa-current-image
-  "Fetches the latest image of an FAA camera through the proxy. Only image URLs
-   on the FAA static host are fetched, rewritten to the proxy's /images/ path."
-  [camera-id]
-  (when-let [image-uri (some-> (faa-api-request (str "cameras/" camera-id "/images/last/1"))
-                               (first)
-                               (:imageUri))]
-    (when (str/starts-with? image-uri faa-images-url)
-      (let [{:keys [status body]} (client/get (str (get-faa-proxy-url)
-                                                   "/images/"
-                                                   (subs image-uri (count faa-images-url)))
-                                              {:as :byte-array})]
-        (when (= 200 status) body)))))
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Helper Functions
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -162,22 +148,6 @@
                 :tilt        (parse-num (:tilt position))
                 :update-time (or update_time (:time image))
                 :image-url   (:url image)}})
-
-(defn- faa-camera->feature
-  [{:keys [siteName state]}
-   {:keys [cameraId cameraDirection cameraBearing cameraLastSuccess latitude longitude]}]
-  {:type       "Feature"
-   :geometry   {:type        "Point"
-                :coordinates [longitude latitude]}
-   :properties {:api-name    "faa"
-                :camera-id   (str cameraId)
-                :latitude    latitude
-                :longitude   longitude
-                :name        (str siteName " (" cameraDirection ")")
-                :pan         cameraBearing
-                :state       state
-                :tilt        0
-                :update-time cameraLastSuccess}})
 
 (defn- ->feature-collection [features]
   {:type     "FeatureCollection"
@@ -204,6 +174,9 @@
   []
   (some->> (get-wildfire-cameras!)
            (pmap #(site->feature "alert-west" %))))
+
+;; TODO - remove once get-and-conform-faa-cameras! is replaced by the FAA Cameras section
+(declare faa-camera->feature)
 
 (defn- get-and-conform-faa-cameras!
   "Fetches FAA WeatherCams cameras and reformats them, skipping inactive sites
@@ -269,38 +242,70 @@
                 :tilt        0
                 :update-time cameraLastSuccess}})
 
-(defn- faa-response->features-collection
+(defn- faa-sites->features-collection
   "Extract a collection of Features from a list of FAA camera sites."
-  [response]
-  (->> (faa-response->sites-collection response)
-       (mapcat (fn [site]
-                 (map #(faa-camera->feature site %)
-                 (:cameras site))))))
+  [sites]
+  (mapcat (fn [site]
+            (map #(faa-camera->feature site %)
+                 (:cameras site)))
+          sites))
+
+(defn- faa-image-uri->proxy-uri
+  "Rewrite an FAA static image URI to the proxy's /images/ path.
+  nil for missing URIs or URIs outside the FAA static host."
+  [image-uri]
+  (when (and (string? image-uri)
+             (str/starts-with? image-uri faa-images-url))
+    (str (get-faa-proxy-url) "/images/" (subs image-uri (count faa-images-url)))))
+
+(defn- faa-sites->camera-image-uris
+  "Map each FAA camera ID (as a string) to its current image URI on the proxy.
+  Cameras without a usable image URI are left out."
+  [sites]
+  (into {}
+        (for [{:keys [cameras]}                  sites
+              {:keys [cameraId currentImageUri]} cameras
+              :let  [proxy-uri (faa-image-uri->proxy-uri currentImageUri)]
+              :when proxy-uri]
+          [(str cameraId) proxy-uri])))
 
 (defn- faa-get-camera-features!
-  "Fetches cameras from the FAA api and formats them as features."
+  "Fetches cameras from the FAA api. Returns a map of :features, the cameras
+  formatted as features, and :camera-image-uris, their proxied image URIs."
   []
-  (-> (faa-make-sites-api-request!)
-      (faa-response->features-collection)))
+  (let [sites (faa-response->sites-collection (faa-make-sites-api-request!))]
+    {:features          (vec (faa-sites->features-collection sites))
+     :camera-image-uris (faa-sites->camera-image-uris sites)}))
 
 (defn- faa-get-camera-features-cached!
-  "Returns FAA camera features if they're cached; fetches them otherwise.
-  Result is a map of :features and :cache, a description of the cache outcome:
-  \"hit: <timestamp>\", \"miss\", \"stale: <timestamp>\" or \"error\"."
+  "Returns FAA camera features and image URIs if they're cached; fetches them otherwise.
+  Result is a map of :features, :camera-image-uris and :cache, a description of
+  the cache outcome: \"hit: <timestamp>\", \"miss\", \"stale: <timestamp>\" or \"error\"."
   []
-  (or (when-let [{:keys [features timestamp]} (source-cache-get :faa)]
-        {:features features :cache (str "hit: " (Instant/ofEpochMilli timestamp))})
-      (when-let [features (try
-                            (not-empty (vec (faa-get-camera-features!)))
-                            (catch Exception e
-                              (log-str "ERROR: Unable to fetch FAA cameras: " (ex-message e))
-                              nil))]
-        (source-cache-reset! :faa {:features features})
-        {:features features :cache "miss"})
+  (or (when-let [{:keys [timestamp] :as cached} (source-cache-get :faa)]
+        (-> (select-keys cached [:features :camera-image-uris])
+            (assoc :cache (str "hit: " (Instant/ofEpochMilli timestamp)))))
+      (when-let [fetched (try
+                           (let [{:keys [features] :as fetched} (faa-get-camera-features!)]
+                             (when (seq features) fetched))
+                           (catch Exception e
+                             (log-str "ERROR: Unable to fetch FAA cameras: " (ex-message e))
+                             nil))]
+        (source-cache-reset! :faa fetched)
+        (assoc fetched :cache "miss"))
       ;; Fetch failed or returned nothing, fall back to the stale cache
-      (when-let [{:keys [features timestamp]} (get @camera-source-cache :faa)]
-        {:features features :cache (str "stale: " (Instant/ofEpochMilli timestamp))})
-      {:features [] :cache "error"}))
+      (when-let [{:keys [timestamp] :as cached} (get @camera-source-cache :faa)]
+        (-> (select-keys cached [:features :camera-image-uris])
+            (assoc :cache (str "stale: " (Instant/ofEpochMilli timestamp)))))
+      {:features [] :camera-image-uris {} :cache "error"}))
+
+(defn- faa-current-image
+  "Fetches the latest image of an FAA camera through the proxy, using the
+  image URI cached alongside the camera features."
+  [camera-id]
+  (when-let [image-uri (get-in (faa-get-camera-features-cached!) [:camera-image-uris camera-id])]
+    (let [{:keys [status body]} (client/get image-uri {:as :byte-array})]
+      (when (= 200 status) body))))
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
