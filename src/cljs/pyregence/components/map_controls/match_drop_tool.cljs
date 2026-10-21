@@ -38,7 +38,7 @@
 
 (def standard-instructions
   "Simulates a 72 hour fire using real-time weather data from the Hybrid model,
-   which is a blend of the HRRR, NAM 3 km, and GFS 0.125\u00B0 models.
+   which is a blend of the HRRR, RRFS, and GFS 0.125\u00B0 models.
    Click on any CONUS location to \"drop\" a match, then set the date and time to begin
    the simulation. Chrome is currently the only supported browser for Match Drop.")
 
@@ -52,7 +52,7 @@
   "The available fire models. Each maps to its own network in sig3."
   (array-map
    "standard" {:opt-label "STANDARD"
-               :tooltip   "ELMFIRE and Pyretechnics running on LANDFIRE fuels and topography, driven by Hybrid weather (HRRR, NAM 3 km and GFS 0.125\u00B0). A 200 member ensemble over 72 hours."}
+               :tooltip   "ELMFIRE and Pyretechnics running on LANDFIRE fuels and topography, driven by Hybrid weather (HRRR, RRFS and GFS 0.125\u00B0). A 200 member ensemble over 72 hours."}
    "cawfe"    {:opt-label "CAWFE"
                :tooltip   "The Coupled Atmosphere-Wildland Fire Environment model. It downscales the NAM forecast and simulates how the fire feeds back on local weather, which the other models cannot do. Forecast weather only, a fixed 5 hour window, and much slower to run."}))
 
