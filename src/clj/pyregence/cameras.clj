@@ -1,5 +1,6 @@
 (ns pyregence.cameras
-  (:import  [java.time Instant Duration])
+  (:import  [java.net URI]
+            [java.time Instant Duration])
   (:require [clj-http.client     :as client]
             [clojure.data.json   :as json]
             [clojure.string      :as str]
@@ -314,16 +315,42 @@
             (assoc :cache (str "stale: " (Instant/ofEpochMilli timestamp)))))
       {:features [] :camera-image-uris {} :cache "error"}))
 
-(defn- faa-current-image
+(defn- faa-fetch-current-image!
   "Fetches the latest image of an FAA camera through the proxy, using the
-  image URI cached alongside the camera features. nil for unknown cameras
-  or failed requests."
+  image URI cached alongside the camera features. Returns a map of:
+  - :image, the image bytes, or nil for unknown cameras or failed requests
+  - :cache, the features cache outcome the image URI came from
+  - :uri, the proxied image URI, or nil for unknown cameras
+  - :proxy-status, the proxy's response status, or nil if it wasn't called"
   [camera-id]
-  (when-let [image-uri (get-in (faa-get-camera-features-cached!) [:camera-image-uris camera-id])]
-    (let [{:keys [status body]} (client/get image-uri {:as :byte-array :throw-exceptions false})]
-      (if (= 200 status)
-        body
-        (log-str "WARN: request for FAA camera " camera-id " image failed with status " status)))))
+  (let [{:keys [camera-image-uris cache]} (faa-get-camera-features-cached!)
+        image-uri                         (get camera-image-uris camera-id)
+        {:keys [status body]}             (when image-uri
+                                            (client/get image-uri
+                                                        {:as :byte-array
+                                                         :throw-exceptions false}))]
+    (when (and image-uri (not= 200 status))
+      (log-str "WARN: request for FAA camera "
+               camera-id
+               " image failed with status "
+               status))
+    {:image        (when (= 200 status) body)
+     :cache        cache
+     :uri          image-uri
+     :proxy-status status}))
+
+(defn- faa-build-image-response
+  "Build the response for an FAA camera image from the result of
+  faa-fetch-current-image!. Diagnostic headers tell where a failure came from:
+  X-Image-Uri is missing when the camera isn't in the cached features, and
+  X-Image-Proxy-Status when the proxy wasn't called."
+  [{:keys [image cache uri proxy-status]}]
+  (cond-> (if image
+            (data-response image {:type "image/jpeg"})
+            (data-response "FAA camera image not available." {:status 404}))
+    true         (assoc-in [:headers "X-Features-Cache"] (str "faa=" cache))
+    uri          (assoc-in [:headers "X-Image-Uri"] (.getPath (URI. uri)))
+    proxy-status (assoc-in [:headers "X-Image-Proxy-Status"] (str proxy-status))))
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -349,7 +376,5 @@
                                 {:type "image/jpeg"})
     "faa"        (if-not (re-matches #"\d+" camera-id)
                    (data-response "Invalid FAA camera ID." {:status 403})
-                   (if-let [image (faa-current-image camera-id)]
-                     (data-response image {:type "image/jpeg"})
-                     (data-response "FAA camera image not available." {:status 404})))
+                   (faa-build-image-response (faa-fetch-current-image! camera-id)))
     (data-response "Invalid cameras API name." {:status 403})))
