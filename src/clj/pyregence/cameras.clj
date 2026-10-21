@@ -31,8 +31,6 @@
 
 (def ^:private faa-images-url "https://images.wcams-static.faa.gov/")
 
-(def ^:private cache-max-age            (* 24 60 1000)) ; Once a day
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Camera cache
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -110,42 +108,6 @@
             (assoc :cache (str "stale: " (Instant/ofEpochMilli timestamp)))))
       {:features [] :cache "error"}))
 
-
-
-
-;; TODO - remove once sources are moved to the new cache
-
-(defonce ^:private camera-cache (atom nil))
-
-(defonce ^:private cached-time  (atom nil))
-
-(defn- reset-cache! [cameras]
-  (reset! cached-time (System/currentTimeMillis))
-  (reset! camera-cache cameras))
-
-(defn- valid-cache? []
-  (and @camera-cache
-       (< (- (System/currentTimeMillis) @cached-time) cache-max-age)))
-
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; API Functions
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-(defn- api-request [path api-url api-defaults & [opts]]
-  (client/get (str api-url "/" path) ; URL
-              (merge api-defaults opts)))
-
-(defn- api-all-cameras [api-url api-defaults]
-  (let [{:keys [status body]} (api-request "cameras" api-url api-defaults)]
-    (when (= 200 status)
-      (json/read-str body :key-fn keyword))))
-
-(defn- faa-api-request [path]
-  (let [{:keys [status body]} (api-request path (str (get-faa-proxy-url) "/api") {})]
-    (when (= 200 status)
-      (:payload (json/read-str body :key-fn keyword)))))
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Helper Functions
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -154,22 +116,6 @@
   (if (string? v)
     (Double/parseDouble v)
     v))
-
-(defn- site->feature [api-name {:keys [name site position image update_time]}]
-  {:type       "Feature"
-   :geometry   {:type        "Point"
-                :coordinates [(parse-num (:longitude site))
-                              (parse-num (:latitude site))]}
-   :properties {:api-name    api-name
-                :camera-id   name
-                :latitude    (parse-num (:latitude site))
-                :longitude   (parse-num (:longitude site))
-                :name        name
-                :pan         (parse-num (:pan position))
-                :state       (:state site)
-                :tilt        (parse-num (:tilt position))
-                :update-time (or update_time (:time image))
-                :image-url   (:url image)}})
 
 (defn- uri->path-and-query
   "Strip the scheme and host from a URI, keeping its path and query string."
@@ -203,45 +149,6 @@
         now            (Instant/now)
         four-hours-ago (.minus now (Duration/ofHours 4))]
     (.isBefore timestamp four-hours-ago)))
-
-;; Camera functions
-
-(defn- get-wildfire-cameras!
-  []
-  (api-all-cameras alert-west-api-url (get-alert-west-api-defaults)))
-
-(defn- get-and-conform-wildfire-cameras!
-  "Fetches ALERTWest wildfire cameras and reformats them."
-  []
-  (some->> (get-wildfire-cameras!)
-           (pmap #(site->feature "alert-west" %))))
-
-;; TODO - remove once get-and-conform-faa-cameras! is replaced by the FAA Cameras section
-(declare faa-camera->feature)
-
-(defn- get-and-conform-faa-cameras!
-  "Fetches FAA WeatherCams cameras and reformats them, skipping inactive sites
-   and cameras under maintenance or out of order."
-  []
-  (some->> (faa-api-request "sites")
-           (remove #(or (:siteInMaintenance %) (not (:siteActive %))))
-           (mapcat (fn [site]
-                     (->> (:cameras site)
-                          (remove #(or (:cameraInMaintenance %) (:cameraOutOfOrder %)))
-                          (map #(faa-camera->feature site %)))))))
-
-(defn- get-all-cameras!
-  "Fetches every configured camera source in parallel. A source that fails
-   yields nil instead of taking the others down with it."
-  []
-  (pmap (fn [[source-name get-cameras!]]
-          (try
-            (get-cameras!)
-            (catch Exception e
-              (log-str "Failed to fetch " source-name " cameras: " (ex-message e))
-              nil)))
-        (cond-> [["ALERTWest" get-and-conform-wildfire-cameras!]]
-          (get-faa-proxy-url) (conj ["FAA" get-and-conform-faa-cameras!]))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; ALERTWest Cameras
