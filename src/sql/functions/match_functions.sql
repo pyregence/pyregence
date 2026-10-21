@@ -182,6 +182,18 @@ CREATE OR REPLACE FUNCTION initialize_match_job(_user_id integer)
 
 $$ LANGUAGE SQL;
 
+-- The org_unique_id of the org stamped on the job, which picks the sig3 it runs on
+-- (PYR1-1842). Null when the job has no org.
+CREATE OR REPLACE FUNCTION get_match_job_org_unique_id(_match_job_id integer)
+ RETURNS text AS $$
+
+    SELECT o.org_unique_id
+    FROM match_jobs mj
+    JOIN organizations o ON o.organization_uid = mj.org_rid
+    WHERE mj.match_job_uid = _match_job_id
+
+$$ LANGUAGE SQL;
+
 -- Update job message
 CREATE OR REPLACE FUNCTION update_match_job(
     _match_job_id        integer,

@@ -180,7 +180,9 @@
                                                      :cawfe-artefacts-dir "s3://owo/cawfe/match-drop/<dev | prod | stg>/artefacts"
                                                      :max-queue-size      5
                                                      :sig3-target         :corespeq
-                                                     :sig3-endpoints      {:corespeq "https://sig3.sig-gis-00.corespeq.com/"}}
+                                                     :sig3-endpoints      {:corespeq "https://sig3.sig-gis-00.corespeq.com/"}
+                                                     :sig3-auths          {}
+                                                     :sig3-org-targets    {}}
  ;; Marketplace (e.g. audience "example.com", partner-id "my-project-123")
  :pyregence.marketplace/config {:enabled              false
                                 :audience             "<your-app-domain>"
