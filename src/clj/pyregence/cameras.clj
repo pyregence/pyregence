@@ -44,7 +44,9 @@
 ;; Structure:
 ;; {:faa {:timestamp (System/currentTimeMillis)
 ;;        :features [vector of Features]
-;;        :camera-image-uris {map of proxied image URIs, keyed by camera ID string}}}
+;;        :camera-image-uris {map of proxied image URIs, keyed by camera ID string}}
+;;  :alert-west {:timestamp (System/currentTimeMillis)
+;;               :features [vector of Features]}}
 (defonce ^:private camera-source-cache (atom {}))
 
 ;; Per-source cache TTL, in seconds
@@ -82,6 +84,32 @@
                                  {:timestamp (System/currentTimeMillis)})]
       (swap! camera-source-cache assoc source-id new-source-cache))))
 
+(defn- get-source-features-cached!
+  "Returns a camera source's cached values if they're valid; calls fetch-features!
+  otherwise. fetch-features! returns a map of :features plus any other values the
+  source needs cached. Result is that map plus :cache, a description of the cache
+  outcome: \"hit: <timestamp>\", \"miss\", \"stale: <timestamp>\" or \"error\"."
+  [source-id fetch-features!]
+  (or (when-let [{:keys [timestamp] :as cached} (source-cache-get source-id)]
+        (-> (dissoc cached :timestamp)
+            (assoc :cache (str "hit: " (Instant/ofEpochMilli timestamp)))))
+      (when-let [fetched (try
+                           (let [{:keys [features] :as fetched} (fetch-features!)]
+                             (when (seq features) fetched))
+                           (catch Exception e
+                             (log-str "ERROR: Unable to fetch "
+                                      (name source-id)
+                                      " cameras: "
+                                      (ex-message e))
+                             nil))]
+        (source-cache-reset! source-id fetched)
+        (assoc fetched :cache "miss"))
+      ;; Fetch failed or returned nothing, fall back to the stale cache
+      (when-let [{:keys [timestamp] :as cached} (get @camera-source-cache source-id)]
+        (-> (dissoc cached :timestamp)
+            (assoc :cache (str "stale: " (Instant/ofEpochMilli timestamp)))))
+      {:features [] :cache "error"}))
+
 
 
 
@@ -113,13 +141,6 @@
     (when (= 200 status)
       (json/read-str body :key-fn keyword))))
 
-(defn- api-current-image [camera-name api-url api-defaults]
-  (let [{:keys [status body]} (api-request (str "currentimage?name=" camera-name)
-                                           api-url
-                                           api-defaults
-                                           {:as :byte-array})]
-    (when (= 200 status) body)))
-
 (defn- faa-api-request [path]
   (let [{:keys [status body]} (api-request path (str (get-faa-proxy-url) "/api") {})]
     (when (= 200 status)
@@ -150,9 +171,28 @@
                 :update-time (or update_time (:time image))
                 :image-url   (:url image)}})
 
-(defn- ->feature-collection [features]
-  {:type     "FeatureCollection"
-   :features features})
+(defn- uri->path-and-query
+  "Strip the scheme and host from a URI, keeping its path and query string."
+  [uri]
+  (let [uri   (URI. uri)
+        path  (.getRawPath uri)
+        query (.getRawQuery uri)]
+    (if query
+      (str path "?" query)
+      path)))
+
+(defn- build-camera-image-response
+  "Build the response for a camera image from the result of a source's
+  fetch-current-image! function. Diagnostic headers tell where a failure came
+  from: X-Image-Uri is missing when the camera isn't in the cached features,
+  and X-Image-Upstream-Status when the upstream wasn't called."
+  [source-id {:keys [image cache uri upstream-status]}]
+  (let [response (if image
+                   (data-response image {:type "image/jpeg"})
+                   (data-response "Camera image not available." {:status 404}))]
+    (cond-> (assoc-in response [:headers "X-Features-Cache"] (str (name source-id) "=" cache))
+      uri             (assoc-in [:headers "X-Image-Uri"] (uri->path-and-query uri))
+      upstream-status (assoc-in [:headers "X-Image-Upstream-Status"] (str upstream-status)))))
 
 ;; Timestamp functions
 
@@ -202,6 +242,104 @@
               nil)))
         (cond-> [["ALERTWest" get-and-conform-wildfire-cameras!]]
           (get-faa-proxy-url) (conj ["FAA" get-and-conform-faa-cameras!]))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; ALERTWest Cameras
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn- alert-west-make-cameras-api-request!
+  "Make a synchronous request to the ALERTWest cameras API,
+  and return the response, whatever its status."
+  []
+  (client/get (str alert-west-api-url "/cameras")
+              (merge (get-alert-west-api-defaults) {:throw-exceptions false})))
+
+(defn- alert-west-response->cameras-collection
+  "Extract the list of cameras from a successful response,
+  or return nil and log on a failed request."
+  [{:keys [status body]}]
+  (if (= 200 status)
+    (try
+      (json/read-str body :key-fn keyword)
+      (catch Exception _
+        (log-str "ERROR: Unable to read JSON response from ALERTWest cameras API.")))
+    (log-str "WARN: request to ALERTWest cameras api failed with status " status)))
+
+(defn- alert-west-camera-usable?
+  "True for cameras with an update time in the last four hours."
+  [{:keys [update_time image]}]
+  (let [update-time (or update_time (:time image))]
+    (and (some? update-time)
+         (not (utc-timestamp->four-hours-old? update-time)))))
+
+(defn- alert-west-prune-cameras
+  "Remove unusable cameras."
+  [cameras]
+  (filter alert-west-camera-usable? cameras))
+
+(defn- alert-west-camera->feature
+  "Map a camera item from the ALERTWest api into a map feature."
+  [{:keys [name site position image update_time]}]
+  {:type       "Feature"
+   :geometry   {:type        "Point"
+                :coordinates [(parse-num (:longitude site))
+                              (parse-num (:latitude site))]}
+   :properties {:api-name    "alert-west"
+                :camera-id   name
+                :latitude    (parse-num (:latitude site))
+                :longitude   (parse-num (:longitude site))
+                :name        name
+                :pan         (parse-num (:pan position))
+                :state       (:state site)
+                :tilt        (parse-num (:tilt position))
+                :update-time (or update_time (:time image))
+                :image-url   (:url image)}})
+
+(defn- alert-west-cameras->features-collection
+  "Extract a collection of Features from a list of ALERTWest cameras."
+  [cameras]
+  (map alert-west-camera->feature cameras))
+
+(defn- alert-west-get-camera-features!
+  "Fetches usable cameras from the ALERTWest api. Returns a map of :features,
+  the cameras formatted as features."
+  []
+  (let [cameras (-> (alert-west-make-cameras-api-request!)
+                    (alert-west-response->cameras-collection)
+                    (alert-west-prune-cameras))]
+    {:features (vec (alert-west-cameras->features-collection cameras))}))
+
+(defn- alert-west-fetch-current-image!
+  "Fetches the latest image of an ALERTWest camera from its API, only for
+  cameras in the cached features. Returns a map of:
+  - :image, the image bytes, or nil for unknown cameras or failed requests
+  - :cache, the features cache outcome the camera was looked up in
+  - :uri, the image URI, or nil for unknown cameras
+  - :upstream-status, the API's response status, or nil if it wasn't called"
+  [camera-name]
+  (let [{:keys [features cache]} (get-source-features-cached!
+                                  :alert-west
+                                  alert-west-get-camera-features!)
+        known-camera?            (some #(= camera-name (get-in % [:properties :camera-id]))
+                                       features)
+        image-uri                (when known-camera?
+                                   (str alert-west-api-url
+                                        "/currentimage?"
+                                        (client/generate-query-string {:name camera-name})))
+        {:keys [status body]}    (when image-uri
+                                   (client/get image-uri
+                                               (merge (get-alert-west-api-defaults)
+                                                      {:as               :byte-array
+                                                       :throw-exceptions false})))]
+    (when (and image-uri (not= 200 status))
+      (log-str "WARN: request for ALERTWest camera "
+               camera-name
+               " image failed with status "
+               status))
+    {:image           (when (= 200 status) body)
+     :cache           cache
+     :uri             image-uri
+     :upstream-status status}))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; FAA Cameras
@@ -293,37 +431,17 @@
     {:features          (vec (faa-sites->features-collection sites))
      :camera-image-uris (faa-sites->camera-image-uris sites)}))
 
-(defn- faa-get-camera-features-cached!
-  "Returns FAA camera features and image URIs if they're cached; fetches them otherwise.
-  Result is a map of :features, :camera-image-uris and :cache, a description of
-  the cache outcome: \"hit: <timestamp>\", \"miss\", \"stale: <timestamp>\" or \"error\"."
-  []
-  (or (when-let [{:keys [timestamp] :as cached} (source-cache-get :faa)]
-        (-> (select-keys cached [:features :camera-image-uris])
-            (assoc :cache (str "hit: " (Instant/ofEpochMilli timestamp)))))
-      (when-let [fetched (try
-                           (let [{:keys [features] :as fetched} (faa-get-camera-features!)]
-                             (when (seq features) fetched))
-                           (catch Exception e
-                             (log-str "ERROR: Unable to fetch FAA cameras: " (ex-message e))
-                             nil))]
-        (source-cache-reset! :faa fetched)
-        (assoc fetched :cache "miss"))
-      ;; Fetch failed or returned nothing, fall back to the stale cache
-      (when-let [{:keys [timestamp] :as cached} (get @camera-source-cache :faa)]
-        (-> (select-keys cached [:features :camera-image-uris])
-            (assoc :cache (str "stale: " (Instant/ofEpochMilli timestamp)))))
-      {:features [] :camera-image-uris {} :cache "error"}))
-
 (defn- faa-fetch-current-image!
   "Fetches the latest image of an FAA camera through the proxy, using the
   image URI cached alongside the camera features. Returns a map of:
   - :image, the image bytes, or nil for unknown cameras or failed requests
   - :cache, the features cache outcome the image URI came from
   - :uri, the proxied image URI, or nil for unknown cameras
-  - :proxy-status, the proxy's response status, or nil if it wasn't called"
+  - :upstream-status, the proxy's response status, or nil if it wasn't called"
   [camera-id]
-  (let [{:keys [camera-image-uris cache]} (faa-get-camera-features-cached!)
+  (let [{:keys [camera-image-uris cache]} (get-source-features-cached!
+                                           :faa
+                                           faa-get-camera-features!)
         image-uri                         (get camera-image-uris camera-id)
         {:keys [status body]}             (when image-uri
                                             (client/get image-uri
@@ -334,23 +452,10 @@
                camera-id
                " image failed with status "
                status))
-    {:image        (when (= 200 status) body)
-     :cache        cache
-     :uri          image-uri
-     :proxy-status status}))
-
-(defn- faa-build-image-response
-  "Build the response for an FAA camera image from the result of
-  faa-fetch-current-image!. Diagnostic headers tell where a failure came from:
-  X-Image-Uri is missing when the camera isn't in the cached features, and
-  X-Image-Proxy-Status when the proxy wasn't called."
-  [{:keys [image cache uri proxy-status]}]
-  (let [response (if image
-                   (data-response image {:type "image/jpeg"})
-                   (data-response "FAA camera image not available." {:status 404}))]
-    (cond-> (assoc-in response [:headers "X-Features-Cache"] (str "faa=" cache))
-      uri          (assoc-in [:headers "X-Image-Uri"] (.getPath (URI. uri)))
-      proxy-status (assoc-in [:headers "X-Image-Proxy-Status"] (str proxy-status)))))
+    {:image           (when (= 200 status) body)
+     :cache           cache
+     :uri             image-uri
+     :upstream-status status}))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Request Handlers
@@ -360,10 +465,13 @@
   "Handle a get-cameras request. Return a FeatureCollection that merges
   the cameras from all available sources"
   [_]
-  (let [{faa-features :features faa-cache :cache} (faa-get-camera-features-cached!)]
+  (let [faa        (get-source-features-cached! :faa faa-get-camera-features!)
+        alert-west (get-source-features-cached! :alert-west alert-west-get-camera-features!)
+        features   (concat (:features alert-west) (:features faa))]
     (-> (data-response {:type     "FeatureCollection"
-                        :features faa-features})
-        (assoc-in [:headers "X-Features-Cache"] (str "faa=" faa-cache)))))
+                        :features features})
+        (assoc-in [:headers "X-Features-Cache"]
+                  (str "faa=" (:cache faa) ", alert-west=" (:cache alert-west))))))
 
 (defn get-current-image
   "Builds a response object with current image of a camera.
@@ -371,9 +479,8 @@
   [_ camera-id api-name]
   {:pre [(string? camera-id)]}
   (case api-name
-    "alert-west" (data-response (api-current-image camera-id alert-west-api-url (get-alert-west-api-defaults))
-                                {:type "image/jpeg"})
-    "faa"        (if-not (re-matches #"\d+" camera-id)
-                   (data-response "Invalid FAA camera ID." {:status 403})
-                   (faa-build-image-response (faa-fetch-current-image! camera-id)))
+    "alert-west" (build-camera-image-response
+                  :alert-west
+                  (alert-west-fetch-current-image! camera-id))
+    "faa"        (build-camera-image-response :faa (faa-fetch-current-image! camera-id))
     (data-response "Invalid cameras API name." {:status 403})))
