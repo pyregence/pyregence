@@ -178,8 +178,8 @@
                                                      :max-queue-size      5
                                                      :sig3-target         :corespeq
                                                      :sig3-endpoints      {:corespeq "https://sig3.sig-gis-00.corespeq.com/"}
-                                                     :sig3-org-endpoints  {"pyregence-consortium" {:url  "<SIG3_TENANT_URL>"
-                                                                                                   :auth "<TENANT_AUTH_TOKEN>"}}}
+                                                     :sig3-org-endpoints  {:pyregence-consortium {:url  "<SIG3_TENANT_URL>"
+                                                                                                  :auth "<TENANT_AUTH_TOKEN>"}}}
  ;; Marketplace (e.g. audience "example.com", partner-id "my-project-123")
  :pyregence.marketplace/config {:enabled              false
                                 :audience             "<your-app-domain>"
