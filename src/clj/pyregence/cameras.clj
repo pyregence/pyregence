@@ -176,6 +176,66 @@
           (get-faa-proxy-url) (conj ["FAA" get-and-conform-faa-cameras!]))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; FAA Cameras
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn- faa-make-sites-api-request!
+  "Make a synchronous request to the FAA camera sites API,
+  and return the response."
+  []
+  (client/get faa-sites-api-url))
+
+(defn- faa-response->sites-collection
+  "Extract the list of sites from a successful response,
+  or return nil and log on a failed request. Remove sites
+  that are inactive or have no working cameras."
+  [{:keys [status body] :as response}]
+  (if (= 200 status)
+    (let [sites (try
+                  (:payload (json/read-str body :key-fn keyword))
+                  (catch Exception e
+                    (log-str "ERROR: Unable to read JSON response from FAA cameras API.")))]
+      sites)
+    (log-str "WARN: request to FAA cameras api failed with status " status)))
+
+(defn- faa-camera->feature
+  "Map a camera item from the FAA api into a map feature."
+  [{:keys [siteName state]}
+   {:keys [cameraId cameraDirection cameraBearing cameraLastSuccess latitude longitude]}]
+  {:type       "Feature"
+   :geometry   {:type        "Point"
+                :coordinates [longitude latitude]}
+   :properties {:api-name    "faa"
+                :camera-id   (str cameraId)
+                :latitude    latitude
+                :longitude   longitude
+                :name        (str siteName " (" cameraDirection ")")
+                :pan         cameraBearing
+                :state       state
+                :tilt        0
+                :update-time cameraLastSuccess}})
+
+(defn- faa-response->features-collection
+  "Extract a collection of Features from a list of FAA camera sites."
+  [response]
+  (->> (faa-response->sites-collection response)
+       (mapcat (fn [site]
+                 (map #(faa-camera->feature site %)
+                 (:cameras site))))))
+
+(defn- faa-get-camera-features!
+  "Fetches cameras from the FAA api and formats them as features."
+  []
+  (-> (faa-make-sites-api-request!)
+      (faa-response->features-collection)))
+
+;; ;; TODO: add per-source cached function
+;; (defn- faa-get-camera-features-cached!
+;;   "Returns FAA camera features if they're cached; fetches them otherwise."
+;;   []
+;;   ())
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Public Functions
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
