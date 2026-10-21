@@ -25,6 +25,8 @@
 
 (defn- get-faa-proxy-url []
   (get-config ::faa-proxy-url))
+(def ^:private faa-sites-api-path "/api/redistributable/sites")
+(def ^:privaate faa-sites-api-url (str (get-faa-proxy-url) faa-sites-api-path))
 
 (def ^:private faa-images-url "https://images.wcams-static.faa.gov/")
 
@@ -34,7 +36,58 @@
 ;; Camera cache
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+;; Per-source (eg faa, alert-west) camera cache
+;; Each entry includes the last fetch timestamp,
+;; and all the contents relevant to the source
+
+;; Structure:
+;; {:faa {:timestamp (System/currentTimeMillis)
+;;        :features [vector of Features]
+;;        :cameraImageURIs {map of processed image URIs, keyed by camera ID}}}
+(defonce ^:private camera-source-cache (atom {}))
+
+;; Per-source cache TTL, in seconds
+(def ^:private cache-ttls {:faa 600; 10 minutes
+                           :alert-west 1800}); 30 minutes, similar to previous 24 minutes
+
+(defn- source-cache-valid?
+  "Checks if a source cache is valid according to its TTL and timestamp."
+  [source-id source-cache]
+  (let [source-ttl (get cache-ttls source-id)
+        cache-timestamp (:timestamp source-cache)]
+    (and (int? source-ttl)
+         (int? cache-timestamp)
+         (< (- (System/currentTimeMillis) cache-timestamp)
+            (* 1000 source-ttl)))))
+
+(defn- source-cache-get
+  "Gets the cache map for a camera source keyword, eg :alert-west.
+  nil if cache is invalid or does not exist."
+  [source-id]
+  (let [cache @camera-source-cache
+        source-cache (get cache source-id)
+        is-valid? (source-cache-valid? source-id source-cache)]
+    (if is-valid?
+      source-cache
+      nil)))
+
+(defn- source-cache-reset!
+  "Reset the cache entry for a given source id.
+  - source-id: keyword eg :alert-west
+  - values: a map of the values to cache"
+  [source-id values]
+  (when (and values (map? values))
+    (let [new-source-cache (conj values
+                                 {:timestamp (System/currentTimeMillis)})]
+      (swap! camera-source-cache assoc source-id new-source-cache))))
+
+
+
+
+;; TODO - remove once sources are moved to the new cache
+
 (defonce ^:private camera-cache (atom nil))
+
 (defonce ^:private cached-time  (atom nil))
 
 (defn- reset-cache! [cameras]
@@ -44,6 +97,7 @@
 (defn- valid-cache? []
   (and @camera-cache
        (< (- (System/currentTimeMillis) @cached-time) cache-max-age)))
+
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; API Functions
@@ -229,33 +283,37 @@
   (-> (faa-make-sites-api-request!)
       (faa-response->features-collection)))
 
-;; ;; TODO: add per-source cached function
-;; (defn- faa-get-camera-features-cached!
-;;   "Returns FAA camera features if they're cached; fetches them otherwise."
-;;   []
-;;   ())
+(defn- faa-get-camera-features-cached!
+  "Returns FAA camera features if they're cached; fetches them otherwise.
+  Result is a map of :features and :cache (:hit, :miss, :stale or :error)."
+  []
+  (or (when-let [features (:features (source-cache-get :faa))]
+        {:features features :cache :hit})
+      (when-let [features (try
+                            (not-empty (vec (faa-get-camera-features!)))
+                            (catch Exception e
+                              (log-str "ERROR: Unable to fetch FAA cameras: " (ex-message e))
+                              nil))]
+        (source-cache-reset! :faa {:features features})
+        {:features features :cache :miss})
+      ;; Fetch failed or returned nothing, fall back to the stale cache
+      (when-let [features (:features (get @camera-source-cache :faa))]
+        {:features features :cache :stale})
+      {:features [] :cache :error}))
+
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Public Functions
+;; Request Handlers
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn get-cameras
-  "Builds a GeoJSON response of the current wildfire cameras."
+  "Handle a get-cameras request. Return a FeatureCollection that merges
+  the cameras from all available sources"
   [_]
-  (data-response
-   (if (valid-cache?)
-     @camera-cache
-     (let [sources     (get-all-cameras!)
-           new-cameras (->> (apply concat sources)
-                            ;; remove inactive cameras
-                            (remove (fn [{{timestamp :update-time} :properties}]
-                                      (or (nil? timestamp)
-                                          (utc-timestamp->four-hours-old? timestamp))))
-                            (->feature-collection))]
-       ;; Only cache complete results so a failed source is retried on the next request
-       (when (every? some? sources)
-         (reset-cache! new-cameras))
-       new-cameras))))
+  (let [{faa-features :features faa-cache :cache} (faa-get-camera-features-cached!)]
+    (data-response {:type     "FeatureCollection"
+                    :features faa-features
+                    :cache    {:faa faa-cache}})))
 
 (defn get-current-image
   "Builds a response object with current image of a camera.
