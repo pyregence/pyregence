@@ -345,13 +345,12 @@
   X-Image-Uri is missing when the camera isn't in the cached features, and
   X-Image-Proxy-Status when the proxy wasn't called."
   [{:keys [image cache uri proxy-status]}]
-  (cond-> (if image
-            (data-response image {:type "image/jpeg"})
-            (data-response "FAA camera image not available." {:status 404}))
-    true         (assoc-in [:headers "X-Features-Cache"] (str "faa=" cache))
-    uri          (assoc-in [:headers "X-Image-Uri"] (.getPath (URI. uri)))
-    proxy-status (assoc-in [:headers "X-Image-Proxy-Status"] (str proxy-status))))
-
+  (let [response (if image
+                   (data-response image {:type "image/jpeg"})
+                   (data-response "FAA camera image not available." {:status 404}))]
+    (cond-> (assoc-in response [:headers "X-Features-Cache"] (str "faa=" cache))
+      uri          (assoc-in [:headers "X-Image-Uri"] (.getPath (URI. uri)))
+      proxy-status (assoc-in [:headers "X-Image-Proxy-Status"] (str proxy-status)))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Request Handlers
