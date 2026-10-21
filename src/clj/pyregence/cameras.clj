@@ -285,21 +285,22 @@
 
 (defn- faa-get-camera-features-cached!
   "Returns FAA camera features if they're cached; fetches them otherwise.
-  Result is a map of :features and :cache (:hit, :miss, :stale or :error)."
+  Result is a map of :features and :cache, a description of the cache outcome:
+  \"hit: <timestamp>\", \"miss\", \"stale: <timestamp>\" or \"error\"."
   []
-  (or (when-let [features (:features (source-cache-get :faa))]
-        {:features features :cache :hit})
+  (or (when-let [{:keys [features timestamp]} (source-cache-get :faa)]
+        {:features features :cache (str "hit: " (Instant/ofEpochMilli timestamp))})
       (when-let [features (try
                             (not-empty (vec (faa-get-camera-features!)))
                             (catch Exception e
                               (log-str "ERROR: Unable to fetch FAA cameras: " (ex-message e))
                               nil))]
         (source-cache-reset! :faa {:features features})
-        {:features features :cache :miss})
+        {:features features :cache "miss"})
       ;; Fetch failed or returned nothing, fall back to the stale cache
-      (when-let [features (:features (get @camera-source-cache :faa))]
-        {:features features :cache :stale})
-      {:features [] :cache :error}))
+      (when-let [{:keys [features timestamp]} (get @camera-source-cache :faa)]
+        {:features features :cache (str "stale: " (Instant/ofEpochMilli timestamp))})
+      {:features [] :cache "error"}))
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -311,9 +312,9 @@
   the cameras from all available sources"
   [_]
   (let [{faa-features :features faa-cache :cache} (faa-get-camera-features-cached!)]
-    (data-response {:type     "FeatureCollection"
-                    :features faa-features
-                    :cache    {:faa faa-cache}})))
+    (-> (data-response {:type     "FeatureCollection"
+                        :features faa-features})
+        (assoc-in [:headers "X-Features-Cache"] (str "faa=" faa-cache)))))
 
 (defn get-current-image
   "Builds a response object with current image of a camera.
