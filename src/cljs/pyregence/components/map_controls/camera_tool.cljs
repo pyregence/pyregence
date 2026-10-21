@@ -40,23 +40,13 @@
 ;; Styles
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn- $alert-logo-style []
+(defn- $camera-attribution-logo-style []
   {:height    "auto"
-   :left      "2rem"
-   :min-width "100px"
+   :min-width "75px"
    :position  "absolute"
-   :top       "2rem"
+   :top       "1rem"
+   :left      "1rem"
    :width     "10%"})
-
-(defn- $faa-attribution-style []
-  {:background-color ($/color-picker :bg-color 0.8)
-   :border-radius    "4px"
-   :color            ($/color-picker :font-color)
-   :font-size        "0.8rem"
-   :left             "2rem"
-   :padding          "0.2rem 0.5rem"
-   :position         "absolute"
-   :top              "2rem"})
 
 (defn- $mobile-camera-tool []
   {:background-color ($/color-picker :bg-color)
@@ -107,14 +97,16 @@
   (case api-name
     "faa" [:a {:href   "https://weathercams.faa.gov/"
                :ref    "noreferrer noopener"
-               :style  ($/combine $faa-attribution-style)
                :target "_blank"}
-           "FAA WeatherCams"]
-    [:a {:href   (str "https://www.alertwest.live/cam-console/" (alert-image-url->alert-camera-id image-url))
-         :ref    "noreferrer noopener"
-         :target "_blank"}
-     [:img {:src   "images/alert_west_logo.png"
-            :style ($/combine $alert-logo-style)}]]))
+           [:img {:src   "images/faa_logo.png"
+                  :style ($/combine $camera-attribution-logo-style)}]]
+
+    "alert-west" [:a {:href   (str "https://www.alertwest.live/cam-console/"
+                                   (alert-image-url->alert-camera-id image-url))
+                      :ref    "noreferrer noopener"
+                      :target "_blank"}
+                  [:img {:src   "images/alert_west_logo.png"
+                         :style ($/combine $camera-attribution-logo-style)}]]))
 
 (defn- camera-image [camera reset-view zoom-camera image-src]
   [:div
