@@ -186,16 +186,16 @@
 
 (defn- alert-west-camera->feature
   "Map a camera item from the ALERTWest api into a map feature."
-  [{:keys [name site position image update_time]}]
+  [{camera-name :name :keys [site position image update_time]}]
   {:type       "Feature"
    :geometry   {:type        "Point"
                 :coordinates [(parse-num (:longitude site))
                               (parse-num (:latitude site))]}
    :properties {:api-name    "alert-west"
-                :camera-id   name
+                :camera-id   camera-name
                 :latitude    (parse-num (:latitude site))
                 :longitude   (parse-num (:longitude site))
-                :name        name
+                :name        camera-name
                 :pan         (parse-num (:pan position))
                 :state       (:state site)
                 :tilt        (parse-num (:tilt position))
@@ -261,11 +261,11 @@
 (defn- faa-response->sites-collection
   "Extract the list of sites from a successful response,
   or return nil and log on a failed request."
-  [{:keys [status body] :as response}]
+  [{:keys [status body]}]
   (if (= 200 status)
     (let [sites (try
                   (:payload (json/read-str body :key-fn keyword))
-                  (catch Exception e
+                  (catch Exception _
                     (log-str "ERROR: Unable to read JSON response from FAA cameras API.")))]
       sites)
     (log-str "WARN: request to FAA cameras api failed with status " status)))
