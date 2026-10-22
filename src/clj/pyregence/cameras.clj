@@ -30,6 +30,11 @@
 
 (def ^:private faa-images-url "https://images.wcams-static.faa.gov/")
 
+;; Bound how long a stalled upstream can hold a request (and the page load
+;; waiting on get-cameras), in milliseconds
+(def ^:private http-timeouts {:connection-timeout 5000
+                              :socket-timeout     5000})
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Camera cache
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -168,7 +173,9 @@
   and return the response, whatever its status."
   []
   (client/get (str alert-west-api-url "/cameras")
-              (merge (get-alert-west-api-defaults) {:throw-exceptions false})))
+              (merge (get-alert-west-api-defaults)
+                     http-timeouts
+                     {:throw-exceptions false})))
 
 (defn- alert-west-response->cameras-collection
   "Extract the list of cameras from a successful response,
@@ -245,6 +252,7 @@
         {:keys [status body]}    (when image-uri
                                    (client/get image-uri
                                                (merge (get-alert-west-api-defaults)
+                                                      http-timeouts
                                                       {:as               :byte-array
                                                        :throw-exceptions false})))]
     (when (and image-uri (not= 200 status))
@@ -265,7 +273,8 @@
   "Make a synchronous request to the FAA camera sites API,
   and return the response, whatever its status."
   []
-  (client/get (str (get-faa-proxy-url) faa-sites-api-path) {:throw-exceptions false}))
+  (client/get (str (get-faa-proxy-url) faa-sites-api-path)
+              (merge http-timeouts {:throw-exceptions false})))
 
 (defn- faa-response->sites-collection
   "Extract the list of sites from a successful response,
@@ -361,8 +370,9 @@
         image-uri                       (get camera-image-uris camera-id)
         {:keys [status body]}             (when image-uri
                                             (client/get image-uri
-                                                        {:as :byte-array
-                                                         :throw-exceptions false}))]
+                                                        (merge http-timeouts
+                                                               {:as               :byte-array
+                                                                :throw-exceptions false})))]
     (when (and image-uri (not= 200 status))
       (log-str "WARN: request for FAA camera "
                camera-id
