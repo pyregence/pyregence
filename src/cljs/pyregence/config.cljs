@@ -1064,16 +1064,16 @@
                                                  :options    (array-map
                                                               :str   {:opt-label    "Impacted structures"
                                                                       :units        "Structures"
-                                                                      :disabled-for #{:r :n1 :n2 :g1 :g2 :b}}
+                                                                      :disabled-for #{:r :g1 :g2 :b}}
                                                               :area  {:opt-label    "Fire area"
                                                                       :units        "Acres"
-                                                                      :disabled-for #{:r :n1 :n2 :g1 :g2 :b}}
+                                                                      :disabled-for #{:r :g1 :g2 :b}}
                                                               :vol   {:opt-label    "Fire volume"
                                                                       :units        "Acre-ft"
-                                                                      :disabled-for #{:r :n1 :n2 :g1 :g2 :b}}
+                                                                      :disabled-for #{:r :g1 :g2 :b}}
                                                               :pligr {:opt-label    "Power line ignition rate"
                                                                       :units        "Ignitions/line-mi/hr"
-                                                                      :disabled-for #{:r :n1 :n2 :g1 :g2 :b}}
+                                                                      :disabled-for #{:r :g1 :g2 :b}}
                                                               :ws    {:opt-label    "Sustained wind speed"
                                                                       :units        "mph"
                                                                       :disabled-for #{:m}}
@@ -1118,14 +1118,6 @@
                                                               " - High Resolution Rapid Refresh at 3 km resolution to 48 hours."
                                                               [:br]
                                                               [:br]
-                                                              [:strong "NAM 3 km"]
-                                                              " -  North American Mesoscale Model at 3 km resolution to 60 hours."
-                                                              [:br]
-                                                              [:br]
-                                                              [:strong "NAM 12 km"]
-                                                              " - North American Mesoscale Model at 12 km resolution to 84 hours."
-                                                              [:br]
-                                                              [:br]
                                                               [:strong "GFS 0.125\u00B0"]
                                                               " - Global Forecast System at 0.125\u00B0 (approx 13 km) resolution to 16 days."
                                                               [:br]
@@ -1138,8 +1130,6 @@
                                                               " - National Blend of Models at 2.5 km to 11 days."]
                                                  :options    {:m  {:opt-label "ELMFIRE"}
                                                               :r  {:opt-label "HRRR"}
-                                                              :n1 {:opt-label "NAM 3 km"}
-                                                              :n2 {:opt-label "NAM 12 km"}
                                                               :g1 {:opt-label "GFS 0.125\u00B0"}
                                                               :g2 {:opt-label "GFS 0.250\u00B0"}
                                                               :b  {:opt-label "NBM"}}}
