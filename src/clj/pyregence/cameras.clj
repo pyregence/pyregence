@@ -27,7 +27,6 @@
 (defn- get-faa-proxy-url []
   (get-config ::faa-proxy-url))
 (def ^:private faa-sites-api-path "/api/redistributable/sites")
-(def ^:private faa-sites-api-url (str (get-faa-proxy-url) faa-sites-api-path))
 
 (def ^:private faa-images-url "https://images.wcams-static.faa.gov/")
 
@@ -50,6 +49,13 @@
 ;; Per-source cache TTL, in seconds
 (def ^:private cache-ttls {:faa 600; 10 minutes
                            :alert-west 1800}); 30 minutes, similar to previous 24 minutes
+
+(defn- source-enabled?
+  "FAA needs its proxy URL configured; other sources are always enabled."
+  [source-id]
+  (case source-id
+    :faa (some? (get-faa-proxy-url))
+    true))
 
 (defn- source-cache-valid?
   "Checks if a source cache is valid according to its TTL and timestamp."
@@ -86,9 +92,12 @@
   "Returns a camera source's cached values if they're valid; calls fetch-features!
   otherwise. fetch-features! returns a map of :features plus any other values the
   source needs cached. Result is that map plus :cache, a description of the cache
-  outcome: \"hit: <timestamp>\", \"miss\", \"stale: <timestamp>\" or \"error\"."
+  outcome: \"hit: <timestamp>\", \"miss\", \"stale: <timestamp>\", \"error\", or
+  \"disabled\" (with no features) for sources that aren't enabled."
   [source-id fetch-features!]
-  (or (when-let [{:keys [timestamp] :as cached} (source-cache-get source-id)]
+  (or (when-not (source-enabled? source-id)
+        {:features [] :cache "disabled"})
+      (when-let [{:keys [timestamp] :as cached} (source-cache-get source-id)]
         (-> (dissoc cached :timestamp)
             (assoc :cache (str "hit: " (Instant/ofEpochMilli timestamp)))))
       (when-let [fetched (try
@@ -256,7 +265,7 @@
   "Make a synchronous request to the FAA camera sites API,
   and return the response, whatever its status."
   []
-  (client/get faa-sites-api-url {:throw-exceptions false}))
+  (client/get (str (get-faa-proxy-url) faa-sites-api-path) {:throw-exceptions false}))
 
 (defn- faa-response->sites-collection
   "Extract the list of sites from a successful response,
@@ -349,7 +358,7 @@
   (let [{:keys [camera-image-uris cache]} (get-source-features-cached!
                                            :faa
                                            faa-get-camera-features!)
-        image-uri                         (get camera-image-uris camera-id)
+        image-uri                       (get camera-image-uris camera-id)
         {:keys [status body]}             (when image-uri
                                             (client/get image-uri
                                                         {:as :byte-array
