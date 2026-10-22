@@ -155,6 +155,9 @@
 
 ;;; Pyrecast
  :pyregence.cameras/alert-west-api-key              "<api-key>"
+ ;; Base URL of the nginx proxy for FAA WeatherCams (it adds the API token).
+ ;; Omit to disable the FAA camera source.
+ :pyregence.cameras/faa-proxy-url                   "http://localhost:13383"
  ;; Credentials used to list workspaces (REST API) and query GetCapabilities per
  ;; GeoServer. Omit a GeoServer's entry entirely to query it anonymously (a
  ;; present-but-blank username/password is still sent as-is). Keys must match the
