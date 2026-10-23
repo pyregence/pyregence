@@ -14,7 +14,9 @@
    [pyregence.utils.async-utils                    :as u-async]
    [pyregence.utils.time_utils                     :as u-time]
    [pyregence.weather-stations.observations        :as observations]
-   [reagent.core                                   :as r]))
+   [pyregence.weather-stations.observations.CA     :as ca-observations]
+   [reagent.core                                   :as r]
+   [clojure.edn                                    :as edn]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Helper Functions
@@ -181,13 +183,31 @@
                                       (go
                                         (when-let [new-weather-station (js->clj (aget features "properties")  :keywordize-keys true)]
                                           (reset! weather-station new-weather-station)
-                                          (let [observation-chan (-> new-weather-station
-                                                                     observations/weather-station-response->observation-url
-                                                                     fetch!)]
+                                          (let [{:keys [network stn_id]} @weather-station
+                                                {:keys [numberReturned] :as response}
+                                                (-> @weather-station
+                                                    observations/weather-station-response->observation-url
+                                                    fetch!
+                                                    <!)]
                                             (reset! latest-observation
-                                                    (or
-                                                     (-> (<! observation-chan) observations/response->observations)
-                                                     :error))))))
+                                                    (if (and (zero? numberReturned) (or network stn_id))
+                                                      (let [{:keys [name_en msc_id]} @weather-station
+                                                            {:keys [body status]}
+                                                            (<! (u-async/call-clj-async! "get-observations-from-ca-xml-server" @weather-station))]
+                                                        (if (not= 200 status)
+                                                          :error
+                                                          (let [all-observations (some-> body edn/read-string)
+                                                                observations
+                                                                (some->
+                                                                 all-observations
+                                                                 ca-observations/xml-properties->display-name->value-with-uom)]
+                                                            {:station
+                                                             {:name name_en
+                                                              :id   msc_id
+                                                              :timestamp (-> all-observations :date_tm :value)}
+                                                             :observations observations})))
+                                                      (or (some-> response observations/response->observations)
+                                                          :error)))))))
                ;; TODO, this form is sloppy.  Maybe return some value to store or convert to form 3 component.
                _                    (take! (mb/create-weather-station-layer! "weather-stations")
                                            #(mb/add-feature-highlight!
