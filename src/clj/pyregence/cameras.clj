@@ -59,7 +59,7 @@
   "FAA needs its proxy URL configured; other sources are always enabled."
   [source-id]
   (case source-id
-    :faa (some? (get-faa-proxy-url))
+    :faa (not (str/blank? (get-faa-proxy-url)))
     true))
 
 (defn- source-cache-valid?
