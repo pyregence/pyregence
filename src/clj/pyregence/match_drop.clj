@@ -31,6 +31,17 @@
 (defn- get-sig3-endpoint []
   (get (get-md-config :sig3-endpoints) (get-md-config :sig3-target)))
 
+(defn- get-sig3
+  "The sig3 endpoint and token for an org. Orgs not in :sig3-org-endpoints, and no
+   org, use :sig3-target with :sig3-auth. A tenant never falls back to :sig3-auth,
+   so the corespeq token is not sent to another cluster."
+  [org-unique-id]
+  (if-let [{:keys [url auth]} (get (get-md-config :sig3-org-endpoints) (keyword org-unique-id))]
+    {:endpoint url
+     :auth     auth}
+    {:endpoint (get-sig3-endpoint)
+     :auth     (get-md-config :sig3-auth)}))
+
 (defn- cawfe-artefact-storage-configured?
   "Whether this environment names the storage prefix for CAWFE run artifacts."
   []
@@ -220,6 +231,9 @@
   ;=> {:match-job-id 42 :org-id nil}
   )
 
+(defn- get-match-job-sig3 [match-job-id]
+  (get-sig3 (sql-primitive (call-sql "get_match_job_org_unique_id" match-job-id))))
+
 (defn- update-match-job!
   "Updates any of the properties of a match job based on a match-job-id (required).
    Any keys that are not provided will not be updated in the DB."
@@ -323,12 +337,12 @@
 
 (defn- submit-match-drop-job!
   "Requests a match-drop job from kubernetes"
-  [{:keys [model] :as params} sig3-endpoint match-job-id]
+  [{:keys [model] :as params} {:keys [endpoint auth]} match-job-id]
   (let [match-drop-config                  (get-md-configs [:sig3-env :cawfe-artefacts-dir])
         request                            (match-drop-args->body model match-job-id params match-drop-config)
-        api-url                            (format "%s/api/submit-job" sig3-endpoint)
+        api-url                            (format "%s/api/submit-job" endpoint)
         http-request                       {:body         (json/write-str request)
-                                            :headers      {"sig-auth" (get-md-config :sig3-auth)}
+                                            :headers      {"sig-auth" auth}
                                             :content-type :json
                                             :accept       :json}
         _                                  (println "POST" api-url request)
@@ -340,9 +354,9 @@
                       {:request http-request :response response})))))
 
 (defn- poll-job!
-  [sig3-endpoint job-id]
-  (let [{:keys [status body]} (client/get (format "%s/api/poll/%s" sig3-endpoint job-id)
-                                          {:headers          {"sig-auth" (get-md-config :sig3-auth)}
+  [{:keys [endpoint auth]} job-id]
+  (let [{:keys [status body]} (client/get (format "%s/api/poll/%s" endpoint job-id)
+                                          {:headers          {"sig-auth" auth}
                                            :socket-timeout   30000
                                            :conn-timeout     30000
                                            :throw-exceptions false})]
@@ -402,11 +416,11 @@
 
 ;; https://mikerowecode.com/2013/02/clojure-polling-function.html
 (defn- start-polling-results!
-  [sig3-endpoint job-id match-job-id model]
+  [sig3 job-id match-job-id model]
   (let [state (atom (model->polling-steps model))]
     (poll-with-retries!
      {:poll-fn    (fn poll-and-record-transitions []
-                    (let [job-state     (poll-job! sig3-endpoint job-id)
+                    (let [job-state     (poll-job! sig3 job-id)
                           transitions   (calculate-transitions state job-state match-job-id)
                           job-succeded? (= (get job-state "status") "success")
                           job-failed?   (= (get job-state "status") "failure")
@@ -439,10 +453,12 @@
   [e]
   (str "Could not start the Match Drop. " (:body (ex-data e) (ex-message e))))
 
-(defn- create-match-job-using-kubernetes!
-  [{:keys [user-id display-name model] :as params} sig3-endpoint]
+(defn- create-match-job!
+  [{:keys [user-id display-name model] :as params}]
+  {:pre [(integer? user-id)]}
   (let [{:keys [match-job-id org-id]} (initialize-match-job! user-id)
         params                        (assoc params :org-id org-id)
+        sig3                          (get-match-job-sig3 match-job-id)
         ;; Return the unpredictable public id as the browser's handle for this job.
         ;; NOTE: the sequential PK is still indirectly exposed through
         ;; geoserver-workspace (named "match-drop-forecast_md-<pk>_..."), which
@@ -451,7 +467,7 @@
         ;; fix means renaming the sig3/GeoServer workspace, out of scope here.
         public-id                     {:match-job-unique-id (:match-job-unique-id (get-match-job-from-match-job-id! match-job-id))}]
     (try
-      (let [{:keys [job-id match-drop-inputs]} (submit-match-drop-job! params sig3-endpoint match-job-id)
+      (let [{:keys [job-id match-drop-inputs]} (submit-match-drop-job! params sig3 match-job-id)
             {:keys [geoserver-workspace]}      match-drop-inputs]
         (update-match-job! {:display-name        (or display-name (str "Match Drop " match-job-id))
                             :md-status           2
@@ -464,7 +480,7 @@
                             :sig3-job-id         job-id
                             :model               model
                             :geoserver-workspace geoserver-workspace})
-        (start-polling-results! sig3-endpoint job-id match-job-id model)
+        (start-polling-results! sig3 job-id match-job-id model)
         public-id)
       ;; Without this the row stays blank and In-Progress forever, and the browser
       ;; polls a job it can never see finish.
@@ -476,12 +492,6 @@
                             :model         model
                             :message       (submit-failure-message e)})
         public-id))))
-
-(defn- create-match-job!
-  [{:keys [user-id] :as params}]
-  {:pre [(integer? user-id)]}
-  (let [sig3-endpoint (get-sig3-endpoint)]
-    (create-match-job-using-kubernetes! params sig3-endpoint)))
 
 ;;==============================================================================
 ;; Public API
@@ -547,20 +557,20 @@
       (->> (call-sql "get_user_match_jobs" user-id)
            ;; get_user_match_jobs no longer selects the sequential PK column.
            ;; (It is still indirectly present in geoserver-workspace; see the
-           ;; note in create-match-job-using-kubernetes!.)
+           ;; note in create-match-job!.)
            (mapv sql-result->job)
            (data-response)))))
 
 (defn- submit-match-drop-removal-job!
   "Requests a match-drop job from kubernetes"
-  [sig3-endpoint {:keys [geosync-host geosync-port geoserver-workspace] :as _original-request}]
+  [{:keys [endpoint auth]} {:keys [geosync-host geosync-port geoserver-workspace] :as _original-request}]
   (let [request                            {:network   :remove-match-drop
                                             :arguments {:geosync-host        geosync-host
                                                         :geosync-port        geosync-port
                                                         :geoserver-workspace geoserver-workspace}}
-        api-url                            (format "%s/api/submit-job" sig3-endpoint)
+        api-url                            (format "%s/api/submit-job" endpoint)
         http-request                       {:body         (json/write-str request)
-                                            :headers      {"sig-auth" (get-md-config :sig3-auth)}
+                                            :headers      {"sig-auth" auth}
                                             :content-type :json
                                             :accept       :json}
         _                                  (println "POST" api-url request)
@@ -572,11 +582,11 @@
 
 (defn- poll-delete-match-drop-results-then-remove-from-db!
   [{:keys [job-id]}
-   sig3-endpoint
+   sig3
    match-job-id]
   (poll-with-retries!
    {:poll-fn    (fn poll-and-delete-when-done []
-                  (let [job-state     (poll-job! sig3-endpoint job-id)
+                  (let [job-state     (poll-job! sig3 job-id)
                         status        (get job-state "status")
                         job-succeded? (= status "success")
                         job-failed?   (= status "failure")
@@ -591,29 +601,6 @@
     :on-error   (fn [e] (log-str "ERROR polling delete match-drop job-id=" job-id " match-job-id=" match-job-id ": " (.getMessage e)))
     :on-timeout (fn [] (log-str "Timeout while waiting for delete job " job-id " results. Aborting."))}))
 
-(defn- delete-match-drop-using-kubernetes! [sig3-endpoint match-job-id]
-  (let [{:keys [dps-request geoserver-workspace]} (get-match-job-from-match-job-id! match-job-id)
-        original-request                          dps-request ; TODO https://sig-gis.atlassian.net/browse/PYR1-1317
-        geosync-host                              (:geosync-host dps-request)
-        geosync-port                              (:geosync-port dps-request)]
-    (if (layers-exist? :match-drop geoserver-workspace)
-      ;; If the specified workspace exists in the layer atom, we need to use GeoSync to remove the workspace from the GeoServer
-      (try
-        (-> (submit-match-drop-removal-job! sig3-endpoint original-request)
-            (poll-delete-match-drop-results-then-remove-from-db! sig3-endpoint match-job-id))
-        (data-response (str "The " geoserver-workspace " workspace is queued to be removed from "
-                            (get-config :triangulum.views/client-keys :geoserver :match-drop) "."))
-        (catch Exception _
-          (update-match-job! {:match-job-id match-job-id
-                              :md-status    1
-                              :message      (format "Something went wrong when trying to delete Match Drop #%s." match-job-id)})
-          (data-response (str "Connection to " geosync-host ":" geosync-port " failed.")
-                         {:status 500})))
-      ;; Otherwise we can just remove the match drop from the database, it doesn't exist anywhere else (normally used for Match Drops that errored out)
-      (do (log-str "Deleting Match Job #" match-job-id " from the database.")
-          (call-sql "delete_match_job" match-job-id)
-          (data-response (str "Match Job #" match-job-id " was deleted from the database."))))))
-
 (defn delete-match-drop!
   "Deletes the specified match drop from the DB and removes it from the GeoServer
    via the 'remove' action passed to the GeoSync Microservice.
@@ -621,8 +608,29 @@
   [{:keys [user-id]} match-job-unique-id]
   (let [job (get-match-job-from-uuid! match-job-unique-id)]
     (if (and job (= user-id (:user-id job)))
-      (let [sig3-endpoint (get-sig3-endpoint)]
-        (delete-match-drop-using-kubernetes! sig3-endpoint (:match-job-id job)))
+      (let [match-job-id                              (:match-job-id job)
+            sig3                                      (get-match-job-sig3 match-job-id)
+            {:keys [dps-request geoserver-workspace]} (get-match-job-from-match-job-id! match-job-id)
+            original-request                          dps-request ; TODO https://sig-gis.atlassian.net/browse/PYR1-1317
+            geosync-host                              (:geosync-host dps-request)
+            geosync-port                              (:geosync-port dps-request)]
+        (if (layers-exist? :match-drop geoserver-workspace)
+          ;; If the specified workspace exists in the layer atom, we need to use GeoSync to remove the workspace from the GeoServer
+          (try
+            (-> (submit-match-drop-removal-job! sig3 original-request)
+                (poll-delete-match-drop-results-then-remove-from-db! sig3 match-job-id))
+            (data-response (str "The " geoserver-workspace " workspace is queued to be removed from "
+                                (get-config :triangulum.views/client-keys :geoserver :match-drop) "."))
+            (catch Exception _
+              (update-match-job! {:match-job-id match-job-id
+                                  :md-status    1
+                                  :message      (format "Something went wrong when trying to delete Match Drop #%s." match-job-id)})
+              (data-response (str "Connection to " geosync-host ":" geosync-port " failed.")
+                             {:status 500})))
+          ;; Otherwise we can just remove the match drop from the database, it doesn't exist anywhere else (normally used for Match Drops that errored out)
+          (do (log-str "Deleting Match Job #" match-job-id " from the database.")
+              (call-sql "delete_match_job" match-job-id)
+              (data-response (str "Match Job #" match-job-id " was deleted from the database.")))))
       (data-response "You are not authorized to delete this match drop." {:status 403}))))
 
 (defn get-md-status
