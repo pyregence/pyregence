@@ -141,14 +141,50 @@
   [user-id]
   (#{:totp :email} (:two-factor (get-user-settings user-id))))
 
+(defn- second-factor-user
+  "The user, when `code` holds up against whichever second factor they configured, else nil."
+  [{:keys [user-id user-email]} code]
+  (case (owed-second-factor user-id)
+    :totp  (when-let [{:keys [secret] :as user} (first (call-sql "get_user_with_totp" user-id))]
+             (when (or (totp/validate-totp-code secret code)
+                       (sql-primitive (call-sql "use_backup_code" {:log? false} user-id code)))
+               user))
+    :email (first (call-sql "verify_user_2fa" {:log? false} user-email code))
+    nil))
+
+(defn- last-password-set-ms [user-id]
+  (sql-primitive (call-sql "get_password_set_ms" user-id)))
+
+(defn- password-changed?
+  "Whether `user-id`'s password changed since the one a session marker was made against."
+  [{:keys [user-id password-set-ms]}]
+  (not= password-set-ms (last-password-set-ms user-id)))
+
+(defn- check-code
+  "Spends a try from `user`'s code budget, then answers 429 once it is gone, 403 for a wrong code, or
+   what `on-pass` makes of the verified user. Every rejection answers alike, so the response says
+   nothing about how the account is set up."
+  [{:keys [user-id] :as user} code on-pass]
+  (if (throttle/over-budget? (throttle/spend! [:2fa user-id]))
+    (data-response "Too many attempts" {:status 429})
+    (if-let [verified (second-factor-user user code)]
+      (do (throttle/forgive! [:2fa user-id])
+          (on-pass verified))
+      (data-response "Invalid code" {:status 403}))))
+
+(defn- mail-code!
+  "Mails a 2FA code and says whether it went. A failure is only logged, since the page can resend."
+  [user-email]
+  (try (not= 400 (:status (email/send-email! nil user-email :2fa)))
+       (catch Exception e (log-str "Sending the 2FA code failed: " (ex-message e)) false)))
+
 (defn- await-second-factor!
-  "Marks `session` as waiting, from `now`, for `user`'s second factor, mailing the code for :email.
-   A failed send is only logged, since the code page can resend."
-  [session {:keys [user_email] :as user} method now]
-  (when (= :email method)
-    (try (email/send-email! nil user_email :2fa)
-         (catch Exception e (log-str "Sending the 2FA code failed: " (ex-message e)))))
-  (session/awaiting-2fa session user now))
+  "Marks `session` as waiting, from `now`, for `user`'s second factor, mailing the code for :email."
+  [session {:keys [user_id user_email] :as user} method now]
+  ;; Read before the slow send, so a reset meanwhile still ends this login.
+  (let [password-set-ms (last-password-set-ms user_id)]
+    (when (= :email method) (mail-code! user_email))
+    (session/awaiting-2fa session user password-set-ms now)))
 
 (defn- second-factor-url [user-email method]
   (str "/verify-2fa?email=" (form-encode user-email) "&method=" (name method)))
@@ -258,22 +294,105 @@
   ;=> ["\"cache\", \"cookies\", \"storage\"" 0]
   )
 
+(defn- invalid-reset-link
+  "410, unlike a wrong code's 403, so the page can say the link is gone."
+  []
+  (data-response "Invalid or expired reset token" {:status 410}))
+
+(defn- same-email? [a b]
+  (boolean (and a b (= (normalize-email a) (normalize-email b)))))
+
+(defn- mailed-reset
+  "The user this session mailed a code to for this reset link, marked :sent?, or nil. The code
+   replaced the link's token, so from then on the session vouches for the link."
+  [session email token now]
+  (let [{:keys [reset-token user-email] :as pending} (session/pending-reset session now)]
+    (when (and (= token reset-token) (same-email? email user-email))
+      (-> pending (select-keys [:user-id :user-email]) (assoc :sent? true)))))
+
+(defn- link-user
+  "The user an emailed link names, while its token is valid."
+  [email token]
+  (when-let [{:keys [user_id user_email]}
+             (first (call-sql "get_user_by_link_token" {:log? false} email token))]
+    {:user-id user_id :user-email user_email}))
+
+(defn- reset-user
+  "Who a reset step for `email` and `token` acts for, or nil when the link is not valid."
+  [session email token now]
+  (or (mailed-reset session email token now) (link-user email token)))
+
+(defn- clearance
+  "What this session's passed second factor allows for a reset of `email`'s password, or nil once
+   the password changed since."
+  [session email now]
+  (let [{:keys [user-email] :as cleared} (session/reset-clearance session now)]
+    (when (and (same-email? email user-email) (not (password-changed? cleared)))
+      cleared)))
+
+(defn check-reset-link
+  "Says what a reset link needs next: the code step for an account with a second factor, or the form.
+   It changes nothing and mails nothing, since mail scanners open links too."
+  [session email token]
+  (let [now                              (clock/now)
+        {:keys [user-id sent?] :as user} (reset-user session email token now)]
+    (cond
+      (clearance session email now) (data-response {:step :form})
+      (nil? user)                   (invalid-reset-link)
+      :else                         (if-let [method (owed-second-factor user-id)]
+                                      (data-response {:step :code :method method :sent? (boolean sent?)})
+                                      (data-response {:step :form})))))
+
+(defn send-reset-code
+  "Mails an emailed-code account the code for this reset, when the user asks for it."
+  [session email token]
+  (let [now                                   (clock/now)
+        {:keys [user-id user-email] :as user} (reset-user session email token now)]
+    (if (and user (= :email (owed-second-factor user-id)))
+      (let [sent? (mail-code! user-email)]
+        ;; Kept either way: a failed send may still have replaced the link's token.
+        (data-response {:sent? sent?} (cond-> {:session (session/awaiting-reset-code session user token now)}
+                                        (not sent?) (assoc :status 502))))
+      (invalid-reset-link))))
+
+(defn verify-reset-code
+  "Checks the second factor for a reset. When it holds up, this session may set the new password once,
+   while the password is still the one the code was entered against."
+  [session email token code]
+  (let [now (clock/now)]
+    (if-let [{:keys [user-id] :as user} (reset-user session email token now)]
+      (let [password-set-ms (last-password-set-ms user-id)]
+        (check-code user code
+                    (fn [_]
+                      (data-response {:step :form}
+                                     {:session (session/cleared-for-reset session user password-set-ms now)}))))
+      (invalid-reset-link))))
+
+(defn- log-in-after-reset
+  "Logs in the user whose new password `rows` show saved, or refuses the link when none was."
+  [session email rows]
+  (if-let [user (first rows)]
+    (do (throttle/forgive! [:password (normalize-email email)])
+        (successful-login user session))
+    (invalid-reset-link)))
+
 (defn set-user-password
-  "Sets a new password for user with valid reset token, then logs them in or asks for the second
-   factor.
+  "Sets a new password from a reset link and logs the user in. An account with a second factor sets it
+   only after its code passed in this session, and only once.
 
    Throws a `pyregence.validation` exception carrying every violated policy
    condition when the new password is unacceptable; `clj-handler` propagates
    it to the client as data."
   [session email password token]
   (v/normalize-password password)
-  (if-let [user (first (call-sql "set_user_password" {:log? false} email password token))]
-    (let [now (clock/now)]
-      (throttle/forgive! [:password (normalize-email email)])
-      ;; End old sessions now, even when a code is still owed.
-      (call-sql "set_user_session_invalidated_at" (:user_id user) now)
-      (log-in-or-await-second-factor session user now))
-    (data-response "Invalid or expired reset token" {:status 403})))
+  (if-let [{:keys [user-id password-set-ms]} (clearance session email (clock/now))]
+    (log-in-after-reset session email
+                        (call-sql "set_user_password_by_id" {:log? false} user-id password password-set-ms))
+    (if-let [user-id (:user-id (link-user email token))]
+      (if (owed-second-factor user-id)
+        (data-response "Code required" {:status 403})
+        (log-in-after-reset session email (call-sql "set_user_password" {:log? false} email password token)))
+      (invalid-reset-link))))
 
 (defn verify-user-email
   "Verifies the user's email with the emailed token, then logs them in or asks for the second
@@ -283,40 +402,98 @@
     (log-in-or-await-second-factor session user (clock/now))
     (data-response "Invalid or expired verification token" {:status 403})))
 
+^:rct/test
+(comment
+  ;; An authenticator account: the password changes only after the code passes, and only once.
+  (let [user-id  24
+        email    "totp-2fa@pyr.dev"
+        secret   "JBSWY3DPEHPK3PXP"
+        original (:settings (first (call-sql "get_user_settings" user-id)))
+        old-ok?  #(some? (first (call-sql "verify_user_login" email "totp2fa")))]
+    (call-sql "update_user_settings" user-id (pr-str {:timezone :utc :two-factor :totp}))
+    (call-sql "delete_totp_setup" user-id)
+    (call-sql "create_totp_setup" user-id secret)
+    (call-sql "mark_totp_verified" user-id)
+    (call-sql "set_verification_token" email "rct-reset" nil)
+    (try
+      (let [opened  (check-reset-link {} email "rct-reset")
+            blocked (set-user-password {} email "New password 1A" "rct-reset")
+            kept?   (old-ok?)
+            cleared (:session (verify-reset-code {} email "rct-reset" (str (totp/get-current-totp-code secret))))
+            done    (set-user-password cleared email "New password 1A" "rct-reset")
+            replay  (set-user-password cleared email "Other password 2B" "rct-reset")
+            again   (call-sql "set_user_password_by_id" {:log? false} user-id "Other password 2B"
+                              (get-in cleared [:reset-cleared :password-set-ms]))]
+        [(:body opened) (:status blocked) kept? (:status done) (some? (get-in done [:session :user-id]))
+         (:status replay) (count again)])
+      (finally
+        (call-sql "set_verification_token" email "rct-restore" nil)
+        (call-sql "set_user_password" email "totp2fa" "rct-restore")
+        (call-sql "update_user_settings" user-id original))))
+  ;=> ["{:step :code, :method :totp, :sent? false}" 403 true 200 true 410 0]
+
+  ;; An emailed-code account gets its code only when it asks, and the reset still completes.
+  (let [user-id  23
+        email    "email-2fa@pyr.dev"
+        original (:settings (first (call-sql "get_user_settings" user-id)))
+        printed  (atom "")]
+    (call-sql "update_user_settings" user-id (pr-str {:timezone :utc :two-factor :email}))
+    (call-sql "set_verification_token" email "rct-reset" nil)
+    (try
+      (let [opened  (check-reset-link {} email "rct-reset")
+            asked   (with-redefs [email/send-email! (fn [_ to _] (reset! printed (with-out-str (email/mock-send-2fa-code to))))]
+                      (:session (send-reset-code {} email "rct-reset")))
+            back    (check-reset-link asked email "rct-reset")
+            code    (second (re-find #"2FA CODE for .* : (\d+)" @printed))
+            cleared (:session (verify-reset-code asked email "rct-reset" code))
+            done    (set-user-password cleared email "New password 1A" "rct-reset")]
+        [(:body opened) (:body back) (:status done) (some? (get-in done [:session :user-id]))])
+      (finally
+        (call-sql "set_verification_token" email "rct-restore" nil)
+        (call-sql "set_user_password" email "email2fa" "rct-restore")
+        (call-sql "update_user_settings" user-id original))))
+  ;=> ["{:step :code, :method :email, :sent? false}" "{:step :code, :method :email, :sent? true}" 200 true]
+
+  ;; A wrong link is refused before anything about the account shows.
+  (check-reset-link {} "totp-2fa@pyr.dev" "not-a-token")
+  ;=>> {:status 410}
+
+  ;; An emailed login code shares the token column but is not a link, so no link route takes it.
+  (do (call-sql "set_verification_token" "user@pyr.dev" "123456"
+                (java.sql.Timestamp. (+ (System/currentTimeMillis) 600000)))
+      (try [(:status (check-reset-link {} "user@pyr.dev" "123456"))
+            (:status (verify-reset-code {} "user@pyr.dev" "123456" "000000"))
+            (:status (set-user-password {} "user@pyr.dev" "New password 1A" "123456"))
+            (:status (verify-user-email {} "user@pyr.dev" "123456"))
+            (count (call-sql "set_user_password" {:log? false} "user@pyr.dev" "New password 1A" "123456"))]
+           (finally (call-sql "set_verification_token" "user@pyr.dev" "rct-restore" nil)
+                    (call-sql "set_user_password" "user@pyr.dev" "user" "rct-restore"))))
+  ;=> [410 410 410 403 0]
+
+  ;; A real verification link still verifies and logs in.
+  (do (call-sql "set_verification_token" "user@pyr.dev" "rct-verify" nil)
+      (verify-user-email {} "user@pyr.dev" "rct-verify"))
+  ;=>> {:status 200 :session some?}
+  )
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; 2FA Core Functions
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn- check-2fa-code
-  "Checks `code` against whichever second factor the user has configured and, when it holds up, logs
-   them in. Every rejection answers the same way, so the response says nothing about how the account
-   is set up."
-  [session {:keys [user-id user-email]} code]
-  (or (case (owed-second-factor user-id)
-        :totp  (when-let [{:keys [secret] :as user} (first (call-sql "get_user_with_totp" user-id))]
-                 (when (or (totp/validate-totp-code secret code)
-                           (sql-primitive (call-sql "use_backup_code" {:log? false} user-id code)))
-                   (successful-login user session)))
-        :email (when-let [user (first (call-sql "verify_user_2fa" {:log? false} user-email code))]
-                 (successful-login user session))
-        nil)
-      (data-response "Invalid code" {:status 403})))
-
 (defn verify-2fa
-  "Verifies the second factor for whoever the session's marker names.
+  "Verifies the second factor for whoever the session's marker names, then logs them in. A marker
+   whose password changed since its password step counts as none.
 
    The `email` argument is ignored. The page still sends it and the marker decides who is verified."
   [session _email code]
-  (if-let [{:keys [user-id user-email] :as user} (session/pending-user session (clock/now))]
-    (if (throttle/over-budget? (throttle/spend! [:2fa user-id]))
-      (data-response "Too many attempts" {:status 429})
-      (let [response (check-2fa-code session user code)]
-        (when (= 200 (:status response))
-          ;; Safe here and not at the password step, where an attacker holding the password
-          ;; could otherwise reset this at will.
-          (throttle/forgive! [:2fa user-id] [:password (normalize-email user-email)]))
-        response))
-    (data-response "Not authenticated" {:status 401})))
+  (let [{:keys [user-email] :as pending} (session/pending-user session (clock/now))]
+    (if (or (nil? pending) (password-changed? pending))
+      (data-response "Not authenticated" {:status 401})
+      (check-code pending code
+                  (fn [user]
+                    ;; Cleared here, not at the password step, so a password alone can't lift the lockout.
+                    (throttle/forgive! [:password (normalize-email user-email)])
+                    (successful-login user session))))))
 
 ^:rct/test
 (comment
@@ -324,14 +501,16 @@
 
   ;; No session, an anonymous one, and a marker past its fuse all answer alike: nobody to verify.
   (let [now   (clock/now)
-        stale (update (session/awaiting-2fa {} {:user_id 24 :user_email "totp-2fa@pyr.dev"} now)
+        stale (update (session/awaiting-2fa {} {:user_id 24 :user_email "totp-2fa@pyr.dev"}
+                                            (last-password-set-ms 24) now)
                       :pending-2fa assoc :expires-at now)]
     (mapv #(:status (verify-2fa % "totp-2fa@pyr.dev" "123456")) [nil {} stale]))
   ;=> [401 401 401]
 
   ;; A wrong code with a good marker is refused. Every rejection answers with this same body,
   ;; which says nothing about how the account is set up.
-  (verify-2fa (session/awaiting-2fa {} {:user_id 24 :user_email "totp-2fa@pyr.dev"} (clock/now))
+  (verify-2fa (session/awaiting-2fa {} {:user_id 24 :user_email "totp-2fa@pyr.dev"}
+                                    (last-password-set-ms 24) (clock/now))
               "totp-2fa@pyr.dev"
               "wrong")
   ;=>> {:status 403 :body "\"Invalid code\""}
@@ -344,7 +523,8 @@
         _                 (call-sql "create_totp_setup" user-id "JBSWY3DPEHPK3PXP")
         _                 (call-sql "mark_totp_verified" user-id)
         secret            (:secret (first (call-sql "get_totp_setup" user-id)))
-        marked            (session/awaiting-2fa {} {:user_id user-id :user_email "totp-2fa@pyr.dev"} (clock/now))]
+        marked            (session/awaiting-2fa {} {:user_id user-id :user_email "totp-2fa@pyr.dev"}
+                                                (last-password-set-ms user-id) (clock/now))]
     (try
       (verify-2fa marked "totp-2fa@pyr.dev" (str (totp/get-current-totp-code secret)))
       (finally
@@ -356,7 +536,8 @@
         _       (call-sql "update_user_settings" user-id (pr-str {:timezone :utc :two-factor :totp}))
         _       (call-sql "delete_backup_codes" user-id)
         _       (call-sql "create_backup_codes" user-id (into-array ["TESTCODE"]))
-        marked  (session/awaiting-2fa {} {:user_id user-id :user_email "totp-2fa@pyr.dev"} (clock/now))]
+        marked  (session/awaiting-2fa {} {:user_id user-id :user_email "totp-2fa@pyr.dev"}
+                                      (last-password-set-ms user-id) (clock/now))]
     (try
       (verify-2fa marked "totp-2fa@pyr.dev" "TESTCODE")
       (finally
@@ -367,12 +548,14 @@
   (let [_      (email/mock-send-2fa-code "email-2fa@pyr.dev")
         token  (with-out-str (email/mock-send-2fa-code "email-2fa@pyr.dev"))
         code   (second (re-find #"2FA CODE for .* : (\d+)" token))
-        marked (session/awaiting-2fa {} {:user_id 23 :user_email "email-2fa@pyr.dev"} (clock/now))]
+        marked (session/awaiting-2fa {} {:user_id 23 :user_email "email-2fa@pyr.dev"}
+                                     (last-password-set-ms 23) (clock/now))]
     (verify-2fa marked "email-2fa@pyr.dev" code))
   ;=>> {:status 200 :session some?}
 
   ;; An account with no second factor is refused exactly like a wrong code.
-  (verify-2fa (session/awaiting-2fa {} {:user_id 2 :user_email "user@pyr.dev"} (clock/now))
+  (verify-2fa (session/awaiting-2fa {} {:user_id 2 :user_email "user@pyr.dev"}
+                                    (last-password-set-ms 2) (clock/now))
               "user@pyr.dev"
               "123456")
   ;=>> {:status 403 :body "\"Invalid code\""}
