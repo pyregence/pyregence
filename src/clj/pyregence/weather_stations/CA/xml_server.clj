@@ -135,7 +135,7 @@
              url->response-body!
              html-str->hrefs
              sort ;; sort to get latest date
-             first
+             last
              (str partial-partner-url)
              url->val&uom)))]
     (data-response observations {:status (if observations 200 404)})))
