@@ -76,13 +76,16 @@
 
 (defn- pick-value-with-uom
   "The first of preferred-keys with a value in properties, as
-  \"<value><uom>\", eg \"14.2°C\". nil when none of them has a value."
+  \"<value><uom>\", eg \"14.2°C\", or just the value when its uom is
+  \"unitless\" (eg fire weather indexes). nil when none of them has a value."
   [properties preferred-keys]
   (some (fn [k]
           (let [value (get properties k)
                 uom   (get properties (keyword (str (name k) "-uom")))]
             (when-not (str/blank? (str value))
-              (str value uom))))
+              (if (= "unitless" uom)
+                (str value)
+                (str value uom)))))
         preferred-keys))
 
 (defn properties->observations

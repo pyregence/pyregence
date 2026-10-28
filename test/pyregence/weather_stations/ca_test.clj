@@ -47,6 +47,10 @@
                                          :air_temp                14.2
                                          :air_temp-uom            "°C"}))))
 
+  (testing "unitless values have no unit"
+    (is (= {"Fwi Fire Weather Index" "0"}
+           (ca/properties->observations {:fire_wx_indx "0" :fire_wx_indx-uom "unitless"}))))
+
   (testing "blank values are skipped"
     (is (= {"Air Temperature" "13.0°C"}
            (ca/properties->observations {:air_temp                ""
