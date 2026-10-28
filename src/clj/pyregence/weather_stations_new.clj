@@ -1,8 +1,9 @@
 (ns pyregence.weather-stations-new
   (:import  [java.time Instant])
-  (:require [triangulum.config   :refer [get-config]]
-            [triangulum.logging  :refer [log-str]]
-            [triangulum.response :refer [data-response]]))
+  (:require [pyregence.weather-stations.ca :as ca]
+            [triangulum.config             :refer [get-config]]
+            [triangulum.logging            :refer [log-str]]
+            [triangulum.response           :refer [data-response]]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Weather Stations
@@ -97,11 +98,33 @@
                         (get-retry-after-failure-ms)))
         (recur)))))
 
+(defn- station->feature
+  "Maps a station into a map feature. Only these properties reach the client;
+  other station details (eg what the CA XML path needs) stay server-side."
+  [source-id station-id {station-name :name :keys [latitude longitude]}]
+  {:type       "Feature"
+   :geometry   {:type        "Point"
+                :coordinates [longitude latitude]}
+   :properties {:source     (name source-id)
+                :station-id station-id
+                :name       station-name
+                :latitude   latitude
+                :longitude  longitude}})
+
+(defn- add-features
+  "Adds :features, built from :stations, to a source's fetch-stations! result."
+  [source-id {:keys [stations] :as values}]
+  (assoc values :features (mapv (fn [[station-id station]]
+                                  (station->feature source-id station-id station))
+                                stations)))
+
 (defn- get-refresh-loops
   "The background loops: the source cache entry each one fills, how often,
   and the function that fetches its value."
   []
-  [])
+  [{:source-id       :ca
+    :refresh-minutes (:points-refresh-minutes (get-source-config :ca))
+    :fetch!          #(add-features :ca (ca/fetch-stations!))}])
 
 (defn start-refresh-loops!
   "Starts one refresh loop per source. Returns their futures, for stop-refresh-loops!."
@@ -195,3 +218,51 @@
       via             (assoc-in [:headers "X-Observation-Source"] via)
       upstream-status (assoc-in [:headers "X-Upstream-Status"] upstream-status)
       xml-path        (assoc-in [:headers "X-Xml-Path"] xml-path))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Request Handlers
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(def ^:private source-names->ids
+  "The :source values of the features, as the client sends them back."
+  {"ca" :ca})
+
+(defn- fetch-observation!
+  "Calls the source's fetch-observation! with what it needs from the source
+  cache. The station id is stationIdentifier for :us and msc_id for :ca."
+  [source-id station-id]
+  (case source-id
+    :ca (ca/fetch-observation! station-id)))
+
+(defn get-weather-stations
+  "Handles a get-weather-stations request. Returns a FeatureCollection that
+  merges the cached stations of all sources. Never fetches: the refresh loops
+  fill the cache."
+  [_]
+  (let [cache @source-cache]
+    (-> (data-response {:type     "FeatureCollection"
+                        :features (mapcat #(get-in cache [% :features]) [:us :ca])})
+        (assoc-in [:headers "X-Points-Cache"] (build-points-cache-header cache)))))
+
+(defn get-weather-station-observation
+  "Handles a get-weather-station-observation request: the latest observation
+  of a station, as {:station {:name :id :timestamp} :observations {display-name
+  value}}, or a 404 when there's none. Only stations in the cached lists are
+  looked up. source is the feature's :source (\"us\" or \"ca\"), and station-id
+  its :station-id."
+  [_ source station-id]
+  (let [source-id (get source-names->ids source)
+        cache     @source-cache]
+    (cond
+      (nil? source-id)
+      (data-response "Invalid weather station source." {:status 403})
+
+      (not (contains? (get-in cache [source-id :stations]) station-id))
+      (-> (data-response "Unknown weather station." {:status 404})
+          (assoc-in [:headers "X-Points-Cache"] (build-points-cache-header cache)))
+
+      :else
+      (build-observation-response
+       (get-observation-cached! source-id
+                                station-id
+                                #(fetch-observation! source-id station-id))))))

@@ -1,0 +1,54 @@
+{
+  "type" : "FeatureCollection",
+  "features" : [ {
+    "type" : "Feature",
+    "id" : "DFO_AZMP-ESG",
+    "geometry" : {
+      "type" : "Point",
+      "coordinates" : [ -62.0, 46.8, 0.0 ]
+    },
+    "properties" : {
+      "std_time" : "EST",
+      "data_attribution_notice_fr" : "Données d'observation fournies par le gouvernement du Canada: Pêches et Océans Canada (MPO). Tous droits réservés.",
+      "msc_id" : "DFO_AZMP-ESG",
+      "data_provider_en" : "Department of Fisheries and Ocean Canada",
+      "icao_id" : "",
+      "data_attribution_notice_en" : "Observational data provided by the Government of Canada: Department of Fisheries and Ocean Canada (DFO). All rights reserved.",
+      "name_en" : "Eastern South Gulf",
+      "wmo_id" : 4400484,
+      "data_provider_fr" : "Pêches et Océans Canada",
+      "name_fr" : "Eastern South Gulf",
+      "auto_man" : "AUTO",
+      "dst_time" : "EDT",
+      "province_territory" : "QC",
+      "iata_id" : "AZMP-ESG"
+    }
+  }, {
+    "type" : "Feature",
+    "id" : "DFO_AZMP-HLX",
+    "geometry" : {
+      "type" : "Point",
+      "coordinates" : [ -63.317, 44.267, 0.0 ]
+    },
+    "properties" : {
+      "std_time" : "AST",
+      "data_attribution_notice_fr" : "Données d'observation fournies par le gouvernement du Canada: Pêches et Océans Canada (MPO). Tous droits réservés.",
+      "msc_id" : "DFO_AZMP-HLX",
+      "data_provider_en" : "Department of Fisheries and Ocean Canada",
+      "icao_id" : "",
+      "data_attribution_notice_en" : "Observational data provided by the Government of Canada: Department of Fisheries and Ocean Canada (DFO). All rights reserved.",
+      "name_en" : "Halifax",
+      "wmo_id" : 4400487,
+      "data_provider_fr" : "Pêches et Océans Canada",
+      "name_fr" : "Halifax",
+      "auto_man" : "AUTO",
+      "dst_time" : "ADT",
+      "province_territory" : "NS",
+      "iata_id" : "AZMP-HLX"
+    }
+  } ],
+  "numberMatched" : 2030,
+  "numberReturned" : 2030,
+  "links" : [ ],
+  "timeStamp" : "2026-10-28T00:55:19.039121Z"
+}

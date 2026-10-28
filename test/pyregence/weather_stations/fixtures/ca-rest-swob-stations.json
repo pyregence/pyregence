@@ -1,0 +1,42 @@
+{
+  "type" : "FeatureCollection",
+  "features" : [ {
+    "type" : "Feature",
+    "id" : "8400416",
+    "geometry" : {
+      "type" : "Point",
+      "coordinates" : [ -55.861122, 47.85773, 186.874 ]
+    },
+    "properties" : {
+      "iata_id" : "CAAB",
+      "name" : "ST ALBAN'S",
+      "wmo_id" : 73051,
+      "msc_id" : "8400416",
+      "data_provider" : "MSC",
+      "dataset_network" : "CA",
+      "auto_man" : "AUTO",
+      "province_territory" : "Newfoundland and Labrador"
+    }
+  }, {
+    "type" : "Feature",
+    "id" : "8205092",
+    "geometry" : {
+      "type" : "Point",
+      "coordinates" : [ -63.51489, 44.63592, 46.655 ]
+    },
+    "properties" : {
+      "iata_id" : "CAAW",
+      "name" : "SHEARWATER RCS",
+      "wmo_id" : 71264,
+      "msc_id" : "8205092",
+      "data_provider" : "MSC",
+      "dataset_network" : "CA",
+      "auto_man" : "AUTO",
+      "province_territory" : "Nova Scotia"
+    }
+  } ],
+  "numberMatched" : 938,
+  "numberReturned" : 938,
+  "links" : [ ],
+  "timeStamp" : "2026-10-28T00:55:19.387763Z"
+}
