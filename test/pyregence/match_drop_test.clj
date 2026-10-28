@@ -469,7 +469,7 @@
                      :match_job_uuid      job-uuid
                      :user_id             1
                      :geoserver_workspace "match-drop-forecast_md-7_20260809_211500"
-                     :dps_request         "{}"}]]
+                     :request             "{}"}]]
       (with-redefs [triangulum.config/get-config sig3-tenant-config
 
                     triangulum.database/call-sql
@@ -489,3 +489,19 @@
         (pyregence.match-drop/delete-match-drop! {:user-id 1} (str job-uuid))
         (is (= {:url "https://consortium.test/api/submit-job" :auth "consortium-token"}
                @post))))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Polling records finished models
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(deftest pyretechnics-success-marks-pyretechnics-done
+  (testing "a successful mdrop-pyretechnics step sets pyretechnics-done?"
+    (let [updates (atom [])]
+      (with-redefs [pyregence.match-drop/poll-with-retries! (fn [{:keys [poll-fn]}] (poll-fn))
+                    pyregence.match-drop/poll-job!          (fn [_ _]
+                                                              {"status" "pending"
+                                                               "steps"  {"mdrop-pyretechnics" {"job-status" "success"
+                                                                                               "result"     {}}}})
+                    pyregence.match-drop/update-match-job!  (fn [m] (swap! updates conj m))]
+        (#'pyregence.match-drop/start-polling-results! {} "sig3-job" match-job-id "standard")
+        (is (some :pyretechnics-done? @updates))))))
