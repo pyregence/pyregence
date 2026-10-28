@@ -244,7 +244,9 @@
   [source-id station-id]
   (case source-id
     :us (us/fetch-observation! station-id)
-    :ca (ca/fetch-observation! station-id)))
+    :ca (ca/fetch-observation! station-id
+                               (get-in @source-cache [:ca :stations station-id])
+                               (get-in @source-cache [:ca-xml-index :partner-folders station-id]))))
 
 (defn get-weather-stations
   "Handles a get-weather-stations request. Returns a FeatureCollection that

@@ -1,8 +1,9 @@
 (ns pyregence.weather-stations.ca
-  (:require [clj-http.client    :as client]
-            [clojure.data.json  :as json]
-            [clojure.string     :as str]
-            [triangulum.logging :refer [log-str]]))
+  (:require [clj-http.client                   :as client]
+            [clojure.data.json                 :as json]
+            [clojure.string                    :as str]
+            [pyregence.weather-stations.ca.xml :as xml]
+            [triangulum.logging                :refer [log-str]]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Canadian weather stations (Environment and Climate Change Canada)
@@ -181,15 +182,50 @@
                     (rest-response->observation (json/read-str body :key-fn keyword)))
      :status      status}))
 
+(defn xml-elements->observation
+  "An observation from the elements of a SWOB XML (see
+  pyregence.weather-stations.ca.xml/parse-swob-elements), in the same shape
+  as rest-response->observation. XML element names are the REST property
+  names without their -value suffix. date_tm comes as
+  2026-10-27T18:00:00.000Z or, from some networks, 2026-10-27T18:00:00Z; both
+  parse on the client."
+  [elements]
+  (let [properties (reduce-kv (fn [properties element-name {:keys [value uom]}]
+                                (assoc properties
+                                       (keyword element-name)               value
+                                       (keyword (str element-name "-uom")) uom))
+                              {}
+                              elements)]
+    {:station      {:name      (format-name (get-in elements ["stn_nam" :value]))
+                    :id        (get-in elements ["msc_id" :value])
+                    :timestamp (get-in elements ["date_tm" :value])}
+     :observations (properties->observations properties)}))
+
 (defn fetch-observation!
   "Fetches the latest observation of a CA station, identified by its msc_id
-  (the REST observation query filters on it). Returns a map of:
+  (the REST observation query filters on it). Falls back to the station's
+  SWOB XML when the REST API returns no observation, which is common for
+  partner stations. station is the station's details from fetch-stations!,
+  and partner-folder its entry in the XML partner folder index (nil when it
+  has none). Returns a map of:
   - :observation, or nil when there's none
-  - :via, where it came from: \"rest\"
-  - :upstream-status, the status of each upstream request"
-  [msc-id]
-  (let [{:keys [observation status]} (fetch-rest-observation! msc-id)]
-    {:observation     observation
-     :via             (when observation "rest")
-     :upstream-status (str "rest=" (or status "error") (when (and (= 200 status) (nil? observation))
-                                                         " (no observation)"))}))
+  - :via, where it came from: \"rest\" or \"xml\"
+  - :upstream-status, the status of each upstream request
+  - :xml-path, the XML's path on the server, when one was found"
+  [msc-id station partner-folder]
+  (let [rest-result (fetch-rest-observation! msc-id)
+        rest-status (str "rest=" (or (:status rest-result) "error")
+                         (when (and (= 200 (:status rest-result)) (nil? (:observation rest-result)))
+                           " (no observation)"))]
+    ;; TODO also fall back to the XML when the REST observation is older than N hours
+    (if (:observation rest-result)
+      {:observation     (:observation rest-result)
+       :via             "rest"
+       :upstream-status rest-status}
+      (let [{:keys [elements status path]} (xml/fetch-station-elements! msc-id station partner-folder)
+            observation                    (when elements
+                                             (xml-elements->observation elements))]
+        {:observation     observation
+         :via             (when observation "xml")
+         :upstream-status (str rest-status ", " status)
+         :xml-path        path}))))

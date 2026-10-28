@@ -2,6 +2,7 @@
   (:import  [java.time LocalDate ZoneOffset]
             [java.time.format DateTimeFormatter])
   (:require [clj-http.client    :as client]
+            [clojure.data.xml   :as xml]
             [clojure.string     :as str]
             [triangulum.logging :refer [log-str]]))
 
@@ -55,6 +56,26 @@
   [date today network]
   (str (swob-root-path date today) "partners/" network "/" date "/"))
 
+(defn partner-folder-path
+  "The folder holding a partner station's XML files for a date."
+  [date today network folder]
+  (str (network-path date today network) folder "/"))
+
+(defn latest-file-path
+  "The latest XML of a non-partner station, from its REST iata_id and auto_man."
+  [iata-id auto-man]
+  (str "/today/observations/swob-ml/latest/" iata-id "-" auto-man "-swob.xml"))
+
+(defn pick-newest-xml
+  "The newest XML file in a station folder listing. File names start with the
+  observation time in every naming scheme seen (2026-10-27-1800-ab-maf-ala-…,
+  20261027T2340Z_DND-CCG_…), so the newest sorts last."
+  [files]
+  (->> files
+       (filter #(str/ends-with? % ".xml"))
+       sort
+       last))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Requests
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -88,16 +109,16 @@
 
 (defn- fetch-listing!
   "The listing at path (which must end in /, or the server answers with a
-  redirect), retrying once when the request doesn't complete. Returns
-  {:listing} or {:status}/{:error} for a failed request."
-  [path]
+  redirect), making up to attempts requests when they don't complete.
+  Returns {:listing} or {:status}/{:error} for a failed request."
+  [path attempts]
   (loop [attempt 1]
     (let [{:keys [status body error]} (fetch-dd! path)]
       (cond
-        (= 200 status)            {:listing (parse-listing body)}
-        (and error (= 1 attempt)) (recur 2)
-        error                     {:error error}
-        :else                     {:status status}))))
+        (= 200 status)                   {:listing (parse-listing body)}
+        (and error (< attempt attempts)) (recur (inc attempt))
+        error                            {:error error}
+        :else                            {:status status}))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Partner folder index
@@ -183,13 +204,13 @@
   (let [date          (get-utc-date 1)
         today         (get-utc-date 0)
         partners-path (str (swob-root-path date today) "partners/")
-        networks      (let [{:keys [listing status error]} (fetch-listing! partners-path)]
+        networks      (let [{:keys [listing status error]} (fetch-listing! partners-path 2)]
                         (or (:dirs listing)
                             (throw (ex-info (str "Listing " partners-path " failed: " (or error status)) {}))))]
     (reduce (fn [folder->networks network]
               (Thread/sleep listing-pause-ms)
               (let [path                           (network-path date today network)
-                    {:keys [listing status error]} (fetch-listing! path)]
+                    {:keys [listing status error]} (fetch-listing! path 2)]
                 (when-not listing
                   (throw (ex-info (str "Listing " path " failed: " (or error status)) {})))
                 (reduce (fn [acc folder]
@@ -213,3 +234,72 @@
              " of " (count (filter (comp :partner? val) stations))
              " CA partner stations to a folder, out of " (count folder->networks) " folders")
     {:partner-folders partner-folders}))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Observations
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn parse-swob-elements
+  "Maps the name of each <element name=… uom=… value=…/> in a SWOB XML
+  document to {:value :uom}, eg {\"air_temp\" {:value \"2.6\" :uom \"°C\"}}.
+  Values stay strings. Throws when the XML can't be parsed."
+  [xml-string]
+  ;; Don't resolve external entities: the XML comes from another server.
+  (let [document (xml/parse-str xml-string :supporting-external-entities false)]
+    ;; xml/parse-str is lazy; into realizes it here, so parse errors surface
+    ;; in this call.
+    (into {}
+          (for [{:keys [tag attrs]} (xml-seq document)
+                :when (= :element tag)]
+            [(:name attrs) {:value (:value attrs) :uom (:uom attrs)}]))))
+
+(defn- find-partner-xml-path!
+  "The path of the newest XML in a partner station's folder: today's, or
+  yesterday's when today's is missing or has no XML yet (just after 00:00
+  UTC). One listing request per date tried. Returns {:path} or {:status}."
+  [{:keys [network folder]}]
+  (if-not folder
+    {:status "xml=no folder in the index"}
+    (let [today     (get-utc-date 0)
+          yesterday (get-utc-date 1)]
+      (or (some (fn [date]
+                  (let [folder-path (partner-folder-path date today network folder)
+                        newest      (some-> (fetch-listing! folder-path 1) :listing :files pick-newest-xml)]
+                    (when newest
+                      {:path (str folder-path newest)})))
+                [today yesterday])
+          {:status "xml=no file in today's or yesterday's folder"}))))
+
+(defn fetch-station-elements!
+  "Fetches the newest SWOB XML of a CA station and parses it. msc-id is the
+  station's msc_id, station its details from
+  pyregence.weather-stations.ca/fetch-stations!, and partner-folder its entry
+  in the partner folder index (nil when it has none). Returns a map of:
+  - :elements, from parse-swob-elements, or nil when there's no usable XML
+  - :status, what happened, for the diagnostic headers
+  - :path, the XML's path on the server, when one was found
+  The XML's msc_id must be the station's: same-name folders and co-located
+  stations would otherwise give another station's observation."
+  [msc-id {:keys [partner? iata-id auto-man]} partner-folder]
+  (let [{:keys [path status]} (if partner?
+                                (find-partner-xml-path! partner-folder)
+                                {:path (latest-file-path iata-id auto-man)})]
+    (if-not path
+      {:status status}
+      (let [{:keys [status body error]} (fetch-dd! path)
+            parsed                      (when (= 200 status)
+                                          (try
+                                            {:elements (parse-swob-elements body)}
+                                            (catch Exception e
+                                              {:problem (str "unreadable: " (ex-message e))})))
+            xml-msc-id                  (get-in parsed [:elements "msc_id" :value])
+            problem                     (cond
+                                          ;; The request failed; status tells why
+                                          (nil? parsed)            nil
+                                          (:problem parsed)        (:problem parsed)
+                                          (not= msc-id xml-msc-id) (str "msc_id is " xml-msc-id))]
+        (when problem
+          (log-str "WARN: XML for CA station " msc-id " at " path ": " problem))
+        {:elements (when-not problem (:elements parsed))
+         :status   (str "xml=" (or status error) (when problem (str " (" problem ")")))
+         :path     path}))))

@@ -1,5 +1,6 @@
 (ns pyregence.weather-stations.ca.xml-test
   (:require [clojure.java.io                   :as io]
+            [clojure.string                    :as str]
             [clojure.test                      :refer [deftest is testing]]
             [pyregence.weather-stations.ca.xml :as xml]))
 
@@ -79,3 +80,74 @@
 
     (testing "plain matches"
       (is (= {:network "bc-forestry" :folder "1002"} (get partner-folders "BC_WMB_1002"))))))
+
+(deftest observation-paths-test
+  (is (= "/today/observations/swob-ml/partners/ab-firewx/20261028/ala/"
+         (xml/partner-folder-path "20261028" "20261028" "ab-firewx" "ala")))
+  (is (= "/today/observations/swob-ml/latest/CAAB-AUTO-swob.xml"
+         (xml/latest-file-path "CAAB" "AUTO"))))
+
+(deftest pick-newest-xml-test
+  (testing "the newest file sorts last"
+    (is (= "2026-10-27-1800-ab-maf-ala-AUTO-swob.xml"
+           (xml/pick-newest-xml ["2026-10-27-1800-ab-maf-ala-AUTO-swob.xml"
+                                 "2026-10-27-1200-ab-maf-ala-AUTO-swob.xml"]))))
+
+  (testing "lighthouse naming"
+    (is (= "20261027T2340Z_DND-CCG_SWOB_1018238.xml"
+           (xml/pick-newest-xml ["20261027T2320Z_DND-CCG_SWOB_1018238.xml"
+                                 "20261027T2340Z_DND-CCG_SWOB_1018238.xml"]))))
+
+  (testing "only XML files, nil when there's none"
+    (is (nil? (xml/pick-newest-xml ["readme.txt"])))
+    (is (nil? (xml/pick-newest-xml [])))))
+
+(deftest parse-swob-elements-test
+  (let [elements (xml/parse-swob-elements (read-fixture "ca-swob-partner.xml"))]
+    (testing "identification and observation elements, values as strings"
+      (is (= {:value "AB-MAF_ALA" :uom "unitless"} (get elements "msc_id")))
+      (is (= {:value "2026-10-27T18:00:00.000Z" :uom "datetime"} (get elements "date_tm")))
+      (is (= {:value "2.6" :uom "°C"} (get elements "air_temp")))))
+
+  (testing "invalid XML throws"
+    (is (thrown? Exception (xml/parse-swob-elements "<not xml")))))
+
+(deftest fetch-station-elements!-test
+  ;; with-redefs replaces the request function, so no request leaves the test.
+  (let [partner-xml (read-fixture "ca-swob-partner.xml")]
+    (testing "a non-partner station reads its latest/ file"
+      (with-redefs [xml/fetch-dd! (fn [path]
+                                    (is (= "/today/observations/swob-ml/latest/ALA-AUTO-swob.xml" path))
+                                    {:status 200 :body partner-xml})]
+        (let [result (xml/fetch-station-elements! "AB-MAF_ALA" {:partner? false :iata-id "ALA" :auto-man "AUTO"} nil)]
+          (is (= "2.6" (get-in result [:elements "air_temp" :value])))
+          (is (= "xml=200" (:status result))))))
+
+    (testing "an XML of another station is rejected"
+      (with-redefs [xml/fetch-dd! (constantly {:status 200 :body partner-xml})]
+        (let [result (xml/fetch-station-elements! "2100159" {:partner? false :iata-id "CYXQ" :auto-man "AUTO"} nil)]
+          (is (nil? (:elements result)))
+          (is (= "xml=200 (msc_id is AB-MAF_ALA)" (:status result))))))
+
+    (testing "a missing file"
+      (with-redefs [xml/fetch-dd! (constantly {:status 404 :body "Not Found"})]
+        (let [result (xml/fetch-station-elements! "8400416" {:partner? false :iata-id "CAAB" :auto-man "AUTO"} nil)]
+          (is (nil? (:elements result)))
+          (is (= "xml=404" (:status result))))))
+
+    (testing "a partner station without a folder in the index makes no request"
+      (with-redefs [xml/fetch-dd! (fn [_] (throw (ex-info "unexpected request" {})))]
+        (is (= {:status "xml=no folder in the index"}
+               (xml/fetch-station-elements! "MB-SD_SNOW" {:partner? true :iata-id "SNOW"} nil)))))
+
+    (testing "a partner station falls back to yesterday's folder when today's has no XML"
+      (let [listing (read-fixture "dd-station-folder-listing.html")]
+        (with-redefs [xml/fetch-dd! (fn [path]
+                                      (cond
+                                        (str/starts-with? path "/today/") {:status 404}
+                                        (str/ends-with? path "/")         {:status 200 :body listing}
+                                        :else                             {:status 200 :body partner-xml}))]
+          (let [result (xml/fetch-station-elements! "AB-MAF_ALA" {:partner? true} {:network "ab-firewx" :folder "ala"})]
+            (is (str/ends-with? (:path result) "/ala/2026-10-27-1800-ab-maf-ala-AUTO-swob.xml"))
+            (is (str/includes? (:path result) "/WXO-DD/"))
+            (is (= "2.6" (get-in result [:elements "air_temp" :value])))))))))

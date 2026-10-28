@@ -61,3 +61,13 @@
 
   (testing "a response without observations"
     (is (nil? (ca/rest-response->observation (read-fixture "ca-rest-no-observation.json"))))))
+
+(deftest xml-elements->observation-test
+  (let [{:keys [station observations]} (ca/xml-elements->observation
+                                        {"stn_nam"  {:value "ALGAR AUTO" :uom "unitless"}
+                                         "msc_id"   {:value "AB-MAF_ALA" :uom "unitless"}
+                                         "date_tm"  {:value "2026-10-27T18:00:00.000Z" :uom "datetime"}
+                                         "air_temp" {:value "2.6" :uom "°C"}
+                                         "rel_hum"  {:value "76" :uom "%"}})]
+    (is (= {:name "Algar Auto" :id "AB-MAF_ALA" :timestamp "2026-10-27T18:00:00.000Z"} station))
+    (is (= {"Air Temperature" "2.6°C" "Relative Humidity" "76%"} observations))))
