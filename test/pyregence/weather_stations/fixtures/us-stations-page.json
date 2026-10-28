@@ -1,0 +1,141 @@
+{
+    "@context": [
+        "https://geojson.org/geojson-ld/geojson-context.jsonld",
+        {
+            "@version": "1.1",
+            "wx": "https://api.weather.gov/ontology#",
+            "s": "https://schema.org/",
+            "geo": "http://www.opengis.net/ont/geosparql#",
+            "unit": "http://codes.wmo.int/common/unit/",
+            "@vocab": "https://api.weather.gov/ontology#",
+            "geometry": {
+                "@id": "s:GeoCoordinates",
+                "@type": "geo:wktLiteral"
+            },
+            "city": "s:addressLocality",
+            "state": "s:addressRegion",
+            "distance": {
+                "@id": "s:Distance",
+                "@type": "s:QuantitativeValue"
+            },
+            "bearing": {
+                "@type": "s:QuantitativeValue"
+            },
+            "value": {
+                "@id": "s:value"
+            },
+            "unitCode": {
+                "@id": "s:unitCode",
+                "@type": "@id"
+            },
+            "forecastOffice": {
+                "@type": "@id"
+            },
+            "forecastGridData": {
+                "@type": "@id"
+            },
+            "publicZone": {
+                "@type": "@id"
+            },
+            "county": {
+                "@type": "@id"
+            },
+            "observationStations": {
+                "@container": "@list",
+                "@type": "@id"
+            }
+        }
+    ],
+    "type": "FeatureCollection",
+    "features": [
+        {
+            "id": "https://api.weather.gov/stations/0007W",
+            "type": "Feature",
+            "geometry": {
+                "type": "Point",
+                "coordinates": [
+                    -84.1787,
+                    30.53099
+                ]
+            },
+            "properties": {
+                "@id": "https://api.weather.gov/stations/0007W",
+                "@type": "wx:ObservationStation",
+                "elevation": {
+                    "unitCode": "wmoUnit:m",
+                    "value": 49.0728
+                },
+                "stationIdentifier": "0007W",
+                "name": "Montford Middle",
+                "timeZone": "America/New_York",
+                "provider": "MesoWest",
+                "subProvider": "WEATHERSTEM",
+                "forecast": "https://api.weather.gov/zones/forecast/FLZ017",
+                "county": "https://api.weather.gov/zones/county/FLC073",
+                "fireWeatherZone": "https://api.weather.gov/zones/fire/FLZ017"
+            }
+        },
+        {
+            "id": "https://api.weather.gov/stations/000PG",
+            "type": "Feature",
+            "geometry": {
+                "type": "Point",
+                "coordinates": [
+                    -121.33943,
+                    36.78921
+                ]
+            },
+            "properties": {
+                "@id": "https://api.weather.gov/stations/000PG",
+                "@type": "wx:ObservationStation",
+                "elevation": {
+                    "unitCode": "wmoUnit:m",
+                    "value": 129.2352
+                },
+                "stationIdentifier": "000PG",
+                "name": "Southside Road",
+                "timeZone": "America/Los_Angeles",
+                "provider": "MesoWest",
+                "subProvider": "PGE",
+                "forecast": "https://api.weather.gov/zones/forecast/CAZ528",
+                "county": "https://api.weather.gov/zones/county/CAC069",
+                "fireWeatherZone": "https://api.weather.gov/zones/fire/CAZ528"
+            }
+        },
+        {
+            "id": "https://api.weather.gov/stations/000SE",
+            "type": "Feature",
+            "geometry": {
+                "type": "Point",
+                "coordinates": [
+                    -117.8552,
+                    34.11814
+                ]
+            },
+            "properties": {
+                "@id": "https://api.weather.gov/stations/000SE",
+                "@type": "wx:ObservationStation",
+                "elevation": {
+                    "unitCode": "wmoUnit:m",
+                    "value": 243.5352
+                },
+                "stationIdentifier": "000SE",
+                "name": "SCE South Hills Park",
+                "timeZone": "America/Los_Angeles",
+                "provider": "MesoWest",
+                "subProvider": "SC-EDISON",
+                "forecast": "https://api.weather.gov/zones/forecast/CAZ548",
+                "county": "https://api.weather.gov/zones/county/CAC037",
+                "fireWeatherZone": "https://api.weather.gov/zones/fire/CAZ548"
+            }
+        }
+    ],
+    "observationStations": [
+        "https://api.weather.gov/stations/0007W",
+        "https://api.weather.gov/stations/000PG",
+        "https://api.weather.gov/stations/000SE"
+    ],
+    "pagination": {
+        "next": "https://api.weather.gov/stations?limit=3&cursor=eyJzIjozfQ%3D%3D"
+    }
+}

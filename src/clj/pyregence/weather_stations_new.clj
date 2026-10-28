@@ -1,6 +1,7 @@
 (ns pyregence.weather-stations-new
   (:import  [java.time Instant])
   (:require [pyregence.weather-stations.ca :as ca]
+            [pyregence.weather-stations.us :as us]
             [triangulum.config             :refer [get-config]]
             [triangulum.logging            :refer [log-str]]
             [triangulum.response           :refer [data-response]]))
@@ -122,7 +123,10 @@
   "The background loops: the source cache entry each one fills, how often,
   and the function that fetches its value."
   []
-  [{:source-id       :ca
+  [{:source-id       :us
+    :refresh-minutes (:points-refresh-minutes (get-source-config :us))
+    :fetch!          #(add-features :us (us/fetch-stations!))}
+   {:source-id       :ca
     :refresh-minutes (:points-refresh-minutes (get-source-config :ca))
     :fetch!          #(add-features :ca (ca/fetch-stations!))}])
 
@@ -225,13 +229,15 @@
 
 (def ^:private source-names->ids
   "The :source values of the features, as the client sends them back."
-  {"ca" :ca})
+  {"us" :us
+   "ca" :ca})
 
 (defn- fetch-observation!
   "Calls the source's fetch-observation! with what it needs from the source
   cache. The station id is stationIdentifier for :us and msc_id for :ca."
   [source-id station-id]
   (case source-id
+    :us (us/fetch-observation! station-id)
     :ca (ca/fetch-observation! station-id)))
 
 (defn get-weather-stations
