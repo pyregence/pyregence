@@ -43,7 +43,7 @@
    the simulation. Chrome is currently the only supported browser for Match Drop.")
 
 (def cawfe-instructions
-  "Simulates a 5 hour fire with CAWFE, which downscales the RRFS forecast and models
+  "Simulates a 5 hour fire with CAWFE, which downscales the RRFS 13km forecast and models
    the fire's feedback on the local atmosphere. Click on any CONUS location to
    \"drop\" a match, then set the date and time to begin the simulation. Chrome is
    currently the only supported browser for Match Drop.")
