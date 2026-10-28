@@ -182,7 +182,8 @@ A browser more narrow than 800 pixels enables a special mobile styling across th
 (defonce ^{:doc "The GeoJSON of the active cameras from ALERTWest and FAA WeatherCams, merged by the backend.
 Each feature's `:api-name` names its source. This atom is used to create the camera layer in mapbox.cljs."}
   the-cameras (r/atom nil))
-(defonce ^{:doc "The GeoJSON response from api.weather.gov. TODO is this atom also used to create the WS layer in mapbox.cljs."}
+(defonce ^{:doc "The FeatureCollection of US and CA weather stations from get-weather-stations.
+Each feature's properties are `:source` (\"us\" or \"ca\"), `:station-id`, `:name`, `:latitude` and `:longitude`. This atom is used to create the weather station layer in mapbox.cljs."}
   the-weather-stations (r/atom nil))
 (defonce ^{:doc "The set of avialable weather dates for Match Drop."}
   md-available-dates (r/atom {}))

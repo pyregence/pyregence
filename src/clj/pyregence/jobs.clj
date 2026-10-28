@@ -4,7 +4,7 @@
             [clojure.string             :as str]
             [pyregence.capabilities     :refer [set-all-capabilities!]]
             [pyregence.throttle         :refer [sweep!]]
-            [pyregence.weather-stations :refer [periodically-get-observation-stations-in-the-background!]]
+            [pyregence.weather-stations-new :as weather-stations]
             [triangulum.config          :refer [get-config]]
             [triangulum.logging         :refer [log-str]]))
 
@@ -54,12 +54,11 @@
 ;; Weather Stations
 
 (defn start-get-weather-stations! []
-  (future
-    (log-str "Calling pyregence.weather-stations/periodically-get-observation-stations-in-the-background!")
-    (periodically-get-observation-stations-in-the-background!)))
+  (log-str "Starting the weather station refresh loops")
+  (weather-stations/start-refresh-loops!))
 
-(defn stop-get-weather-stations! [fut]
-  (future-cancel fut))
+(defn stop-get-weather-stations! [futures]
+  (weather-stations/stop-refresh-loops! futures))
 
 ;; Throttle Sweep
 

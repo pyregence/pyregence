@@ -8,7 +8,7 @@
             [pyregence.match-drop       :as match-drop]
             [pyregence.red-flag         :as red-flag]
             [pyregence.session          :as session]
-            [pyregence.weather-stations :as weather-stations]))
+            [pyregence.weather-stations-new :as weather-stations]))
 
 (def routes
   {;; Page Routes
@@ -156,6 +156,9 @@
                                                      :auth-action :block}
    ;; Weather Station API
    [:post "/clj/get-weather-stations"]               {:handler (clj-handler weather-stations/get-weather-stations)
+                                                     :auth-type   #{:member :token}
+                                                     :auth-action :block}
+   [:post "/clj/get-weather-station-observation"]    {:handler (clj-handler weather-stations/get-weather-station-observation)
                                                      :auth-type   #{:member :token}
                                                      :auth-action :block}
 

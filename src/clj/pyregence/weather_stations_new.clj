@@ -120,6 +120,14 @@
                                   (station->feature source-id station-id station))
                                 stations)))
 
+(defn- fetch-ca-xml-index!
+  "Builds the CA XML partner folder index from the cached CA station list,
+  first waiting for that list to load (about a minute after startup)."
+  []
+  (while (empty? (get-in @source-cache [:ca :stations]))
+    (Thread/sleep 10000))
+  (ca-xml/fetch-partner-folders! (get-in @source-cache [:ca :stations])))
+
 (defn- get-refresh-loops
   "The background loops: the source cache entry each one fills, how often,
   and the function that fetches its value."
@@ -130,11 +138,9 @@
    {:source-id       :ca
     :refresh-minutes (:points-refresh-minutes (get-source-config :ca))
     :fetch!          #(add-features :ca (ca/fetch-stations!))}
-   ;; Needs the CA station list: until it's loaded, this fails and retries
-   ;; after retry-after-failure-minutes.
    {:source-id       :ca-xml-index
     :refresh-minutes (:xml-index-refresh-minutes (get-source-config :ca))
-    :fetch!          #(ca-xml/fetch-partner-folders! (get-in @source-cache [:ca :stations]))}])
+    :fetch!          fetch-ca-xml-index!}])
 
 (defn start-refresh-loops!
   "Starts one refresh loop per source. Returns their futures, for stop-refresh-loops!."
