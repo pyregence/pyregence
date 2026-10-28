@@ -169,6 +169,15 @@
                                                      :parrot05    {:username "<username>" :password "<password>"}
                                                      :parrot06    {:username "<username>" :password "<password>"}}
  :pyregence.weather-stations/get-observation-stations-every-n-minutes 1440 ;; once a day
+ ;; Station lists (map points) and the CA XML index refresh in the background;
+ ;; observations are cached per station for observation-ttl-seconds.
+ :pyregence.weather-stations/sources                {:us {:points-refresh-minutes  1440 ;; once a day
+                                                          :observation-ttl-seconds 300}
+                                                     :ca {:points-refresh-minutes    1440
+                                                          :observation-ttl-seconds   300
+                                                          :xml-index-refresh-minutes 1440}}
+ ;; After a failed refresh, retry this soon instead of waiting the full interval.
+ :pyregence.weather-stations/retry-after-failure-minutes 10
  :pyregence.email/verification-token-expiry-minutes 15
  ;; Bounds (pentest AC): idle < 30, absolute < 8 h.
  :pyregence.auth/idle-timeout-min                   29
