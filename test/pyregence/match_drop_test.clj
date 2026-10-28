@@ -272,6 +272,42 @@
           (is (str/includes? (str body) (str job-uuid))
               "the browser still gets a job id to poll"))))))
 
+(deftest failed-sig3-lookup-marks-the-job-as-errored
+  (testing "a failed org lookup records the error instead of leaving the row In-Progress"
+    (let [sql-calls (atom [])
+          job-uuid  #uuid "00000000-0000-0000-0000-0000000000ff"]
+      (with-redefs [triangulum.config/get-config
+                    (fn [& ks]
+                      (case (vec ks)
+                        [:triangulum.views/client-keys :features :match-drop]   true
+                        [:triangulum.views/client-keys :features :cawfe]        true
+                        [:pyregence.match-drop/match-drop :cawfe-artefacts-dir] (:cawfe-artefacts-dir md-config)
+                        [:pyregence.match-drop/match-drop :max-queue-size]      5
+                        nil))
+
+                    triangulum.database/call-sql
+                    (fn [f & args]
+                      (swap! sql-calls conj (vec (cons f args)))
+                      (case f
+                        "count_running_user_match_jobs" [{:count 0}]
+                        "count_all_running_match_jobs"  [{:count 0}]
+                        "initialize_match_job"          [{:match_job_id 7 :org_id 3}]
+                        "get_match_job"                 [{:match_job_id 7 :match_job_uuid job-uuid}]
+                        "get_match_job_org_unique_id"   (throw (ex-info "connection reset" {}))
+                        nil))
+
+                    clj-http.client/post
+                    (fn [_ _] (throw (ex-info "sig3 must not be called" {})))]
+
+        (let [body    (:body (initiate-md! {:user-id 1 :match-drop-access? true}
+                                           (assoc md-params :model "cawfe")))
+              updates (filter #(= "update_match_job" (first %)) @sql-calls)]
+          (is (= 1 (count updates)) "the failure is written back to the job")
+          (let [[_ _ _ md-status] (first updates)]
+            (is (= 1 md-status) "md-status 1 is Error"))
+          (is (str/includes? (str body) (str job-uuid))
+              "the browser still gets a job id to poll"))))))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; :cawfe feature flag
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

@@ -458,7 +458,6 @@
   {:pre [(integer? user-id)]}
   (let [{:keys [match-job-id org-id]} (initialize-match-job! user-id)
         params                        (assoc params :org-id org-id)
-        sig3                          (get-match-job-sig3 match-job-id)
         ;; Return the unpredictable public id as the browser's handle for this job.
         ;; NOTE: the sequential PK is still indirectly exposed through
         ;; geoserver-workspace (named "match-drop-forecast_md-<pk>_..."), which
@@ -467,7 +466,8 @@
         ;; fix means renaming the sig3/GeoServer workspace, out of scope here.
         public-id                     {:match-job-unique-id (:match-job-unique-id (get-match-job-from-match-job-id! match-job-id))}]
     (try
-      (let [{:keys [job-id match-drop-inputs]} (submit-match-drop-job! params sig3 match-job-id)
+      (let [sig3                               (get-match-job-sig3 match-job-id)
+            {:keys [job-id match-drop-inputs]} (submit-match-drop-job! params sig3 match-job-id)
             {:keys [geoserver-workspace]}      match-drop-inputs]
         (update-match-job! {:display-name        (or display-name (str "Match Drop " match-job-id))
                             :md-status           2
