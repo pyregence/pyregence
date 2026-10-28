@@ -1,7 +1,8 @@
 (ns pyregence.weather-stations-new
   (:import  [java.time Instant])
-  (:require [pyregence.weather-stations.ca :as ca]
-            [pyregence.weather-stations.us :as us]
+  (:require [pyregence.weather-stations.ca     :as ca]
+            [pyregence.weather-stations.ca.xml :as ca-xml]
+            [pyregence.weather-stations.us     :as us]
             [triangulum.config             :refer [get-config]]
             [triangulum.logging            :refer [log-str]]
             [triangulum.response           :refer [data-response]]))
@@ -128,7 +129,12 @@
     :fetch!          #(add-features :us (us/fetch-stations!))}
    {:source-id       :ca
     :refresh-minutes (:points-refresh-minutes (get-source-config :ca))
-    :fetch!          #(add-features :ca (ca/fetch-stations!))}])
+    :fetch!          #(add-features :ca (ca/fetch-stations!))}
+   ;; Needs the CA station list: until it's loaded, this fails and retries
+   ;; after retry-after-failure-minutes.
+   {:source-id       :ca-xml-index
+    :refresh-minutes (:xml-index-refresh-minutes (get-source-config :ca))
+    :fetch!          #(ca-xml/fetch-partner-folders! (get-in @source-cache [:ca :stations]))}])
 
 (defn start-refresh-loops!
   "Starts one refresh loop per source. Returns their futures, for stop-refresh-loops!."
