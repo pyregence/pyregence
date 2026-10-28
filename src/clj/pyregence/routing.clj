@@ -8,7 +8,7 @@
             [pyregence.match-drop       :as match-drop]
             [pyregence.red-flag         :as red-flag]
             [pyregence.session          :as session]
-            [pyregence.weather-stations-new :as weather-stations]))
+            [pyregence.weather-stations :as weather-stations]))
 
 (def routes
   {;; Page Routes

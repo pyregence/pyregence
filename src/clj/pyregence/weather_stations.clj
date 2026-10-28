@@ -1,85 +1,288 @@
 (ns pyregence.weather-stations
-  (:require
-   [clj-http.client     :as client]
-   [triangulum.config   :refer [get-config]]
-   [triangulum.logging  :refer [log log-str]]))
+  (:import  [java.time Instant])
+  (:require [pyregence.weather-stations.ca     :as ca]
+            [pyregence.weather-stations.ca.xml :as ca-xml]
+            [pyregence.weather-stations.us     :as us]
+            [triangulum.config             :refer [get-config]]
+            [triangulum.logging            :refer [log-str]]
+            [triangulum.response           :refer [data-response]]))
 
-(defonce observation-stations (atom []))
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Weather Stations
+;; US: National Weather Service API, https://www.weather.gov/documentation/services-web-api
+;; CA: Environment and Climate Change Canada, REST API at https://api.weather.gc.ca
+;;     and SWOB XML files at https://dd.weather.gc.ca (fill-in for observations
+;;     the REST API doesn't return).
+;;
+;; Station lists (map points) take minutes to fetch, so background loops
+;; refresh them; request handlers only read the cache. Observations are
+;; fetched when a station is clicked, and cached for a short time.
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-;;NOTE this takes roughly 5-10 minutes
-(defn- get-US-observation-stations!
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Config
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn- get-source-config
+  "The config map of a source (:us or :ca)."
+  [source-id]
+  (get (get-config ::sources) source-id))
+
+(defn- get-retry-after-failure-ms
+  "How long a refresh loop waits after a failed refresh, instead of its full interval."
   []
-  (loop [url                  "https://api.weather.gov/stations"
-         observation-stations []]
-    (Thread/sleep 2000)
-    (let [{{new-observation-stations           :features
-            {next-batch-of-stations-url :next} :pagination} :body}
-          (client/get url {:as      :json
-                           :headers {"User-Agent"    "support@sig-gis.com"
-                                     "Feature-Flags" "obs_station_provider"}
-                           :connection-timeout (* 1000 60 3)})]
-      (if (seq new-observation-stations)
-        (recur next-batch-of-stations-url (concat observation-stations new-observation-stations))
-        observation-stations))))
+  (* 1000 60 (get-config ::retry-after-failure-minutes)))
 
-(defn get-CA-observation-stations-from-url!
-  [url]
-  (loop [url                  url
-         observation-stations []]
-    (Thread/sleep 2000)
-    (let [{{links :links
-            new-observation-stations :features} :body} (client/get url {:as :json :connection-timeout (* 1000 60 3)})
-          next-batch-of-stations-url (->> links (some (fn [{:keys [rel href]}] (when (= rel "next") href))))
-          observation-stations (concat observation-stations new-observation-stations)]
-      (if (seq next-batch-of-stations-url)
-        (recur next-batch-of-stations-url observation-stations)
-        observation-stations))))
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Source cache
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-;;NOTE this takes about 3 minutes
-(defn get-CA-observation-stations!
-  []
-  (reduce
-   (fn [l url]
-     (concat l (get-CA-observation-stations-from-url! url)))
-   []
-   ;;TODO consider adding HTTP query params just for the data we need to limit strain on API
-   ["https://api.weather.gc.ca/collections/swob-partner-stations/items?lang=en&limit=5000"
-    "https://api.weather.gc.ca/collections/swob-stations/items?lang=en&limit=5000"]))
+;; Per-source station lists and indexes, each replaced wholesale by its
+;; refresh loop. A failed refresh keeps the previous value and adds :failed-at.
+;;
+;; Structure:
+;; {:us           {:timestamp ms
+;;                 :features  [vector of Features]
+;;                 :stations  {station-id {station details}}}
+;;  :ca           {:timestamp ms
+;;                 :features  [vector of Features]
+;;                 :stations  {msc-id {station details, including what the XML path needs}}}
+;;  :ca-xml-index {:timestamp ms
+;;                 :partner-folders {msc-id {:network :folder}}}}
+(defonce ^:private source-cache (atom {}))
 
-(defn- select-relevent-properties
-  [{{[lon lat] :coordinates} :geometry :as ws}]
-  (-> ws
-      (update :properties select-keys [:name :stationIdentifier :msc_id :name_en])
-      (update :properties assoc :longitude lon :latitude lat)))
+(defn- source-cache-status
+  "Describes a source cache entry for the diagnostic headers:
+  - \"hit: <timestamp>\" when the last refresh succeeded
+  - \"stale: <timestamp>\" when the last refresh failed and the previous value is served
+  - \"error: <failed-at>\" when the last refresh failed and there's no previous value
+  - \"empty\" before the first refresh finishes"
+  [{:keys [timestamp failed-at]}]
+  (cond
+    (and timestamp failed-at) (str "stale: " (Instant/ofEpochMilli timestamp))
+    timestamp                 (str "hit: " (Instant/ofEpochMilli timestamp))
+    failed-at                 (str "error: " (Instant/ofEpochMilli failed-at))
+    :else                     "empty"))
 
-;;TODO consider making one pipeline (api end point, front end async channel, etc.. per set of weather stations)
-;;It's unclear this would be easier to manage, but there is not reason other then artistic preference to not do it.
-(defn load-all-observation-stations!
-  []
-  (reset! observation-stations
-          (->> (get-US-observation-stations!)
-               ;; CloudFire said to exclude these providers.
-               (filter (fn [{{provider :provider} :properties}]
-                         (#{"MesoWest" "RAWS" "ASOS"} provider)))
-               (remove (fn [{:keys [id]}] (= id "https://api.weather.gov/stations/0007W")))
-               (concat (get-CA-observation-stations!))
-               (map select-relevent-properties))))
+(defn- refresh-source!
+  "Calls fetch! and replaces the source's cache entry with its result.
+  A result without :features or :partner-folders counts as a failure. On
+  failure, keeps the previous value and records :failed-at. Returns true when
+  the refresh succeeded."
+  [source-id fetch!]
+  (try
+    (let [values (fetch!)]
+      (if (or (seq (:features values)) (seq (:partner-folders values)))
+        (do (swap! source-cache assoc source-id (assoc values :timestamp (System/currentTimeMillis)))
+            (log-str "Weather stations: refreshed " (name source-id))
+            true)
+        (do (log-str "WARN: Weather stations: refreshing " (name source-id) " returned nothing")
+            (swap! source-cache assoc-in [source-id :failed-at] (System/currentTimeMillis))
+            false)))
+    ;; Stopping the worker interrupts the loop's thread. Rethrow, so the loop
+    ;; ends instead of logging the interruption as a failed refresh.
+    (catch InterruptedException e
+      (throw e))
+    (catch Exception e
+      (log-str "ERROR: Weather stations: unable to refresh " (name source-id) ": " (ex-message e))
+      (swap! source-cache assoc-in [source-id :failed-at] (System/currentTimeMillis))
+      false)))
 
-(defn periodically-get-observation-stations-in-the-background!
-  []
+(defn- start-refresh-loop!
+  "Starts a background loop that refreshes a source every refresh-minutes, or
+  sooner (retry-after-failure-minutes) after a failure. Returns its future."
+  [source-id refresh-minutes fetch!]
   (future
     (loop []
-      (try
-        ;;TODO consider a way to hydrate per page and/or save cache between server restarts.
-        (load-all-observation-stations!)
-        (log-str "weather-stations-updated")
-        (catch Exception ex (log (ex-data ex) :truncate? false)))
-      (Thread/sleep (* 1000 ;; 1s
-                       60   ;; 1m
-                       (get-config ::get-observation-stations-every-n-minutes)))
-      (recur))))
+      (let [refreshed? (refresh-source! source-id fetch!)]
+        (Thread/sleep (if refreshed?
+                        (* 1000 60 refresh-minutes)
+                        (get-retry-after-failure-ms)))
+        (recur)))))
+
+(defn- station->feature
+  "Maps a station into a map feature. Only these properties reach the client;
+  other station details (eg what the CA XML path needs) stay server-side."
+  [source-id station-id {station-name :name :keys [latitude longitude]}]
+  {:type       "Feature"
+   :geometry   {:type        "Point"
+                :coordinates [longitude latitude]}
+   :properties {:source     (name source-id)
+                :station-id station-id
+                :name       station-name
+                :latitude   latitude
+                :longitude  longitude}})
+
+(defn- add-features
+  "Adds :features, built from :stations, to a source's fetch-stations! result."
+  [source-id {:keys [stations] :as values}]
+  (assoc values :features (mapv (fn [[station-id station]]
+                                  (station->feature source-id station-id station))
+                                stations)))
+
+(defn- fetch-ca-xml-index!
+  "Builds the CA XML partner folder index from the cached CA station list,
+  first waiting for that list to load (about a minute after startup)."
+  []
+  (while (empty? (get-in @source-cache [:ca :stations]))
+    (Thread/sleep 10000))
+  (ca-xml/fetch-partner-folders! (get-in @source-cache [:ca :stations])))
+
+(defn- get-refresh-loops
+  "The background loops: the source cache entry each one fills, how often,
+  and the function that fetches its value."
+  []
+  [{:source-id       :us
+    :refresh-minutes (:points-refresh-minutes (get-source-config :us))
+    :fetch!          #(add-features :us (us/fetch-stations!))}
+   {:source-id       :ca
+    :refresh-minutes (:points-refresh-minutes (get-source-config :ca))
+    :fetch!          #(add-features :ca (ca/fetch-stations!))}
+   {:source-id       :ca-xml-index
+    :refresh-minutes (:xml-index-refresh-minutes (get-source-config :ca))
+    :fetch!          fetch-ca-xml-index!}])
+
+(defn start-refresh-loops!
+  "Starts one refresh loop per source. Returns their futures, for stop-refresh-loops!."
+  []
+  (mapv (fn [{:keys [source-id refresh-minutes fetch!]}]
+          (start-refresh-loop! source-id refresh-minutes fetch!))
+        (get-refresh-loops)))
+
+(defn stop-refresh-loops!
+  "Stops the refresh loops started by start-refresh-loops!."
+  [futures]
+  (run! future-cancel futures))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Observation cache
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;; Latest observations, keyed by [source-id station-id]. The station id is
+;; stationIdentifier for :us and msc_id for :ca. Only successful fetches are
+;; cached, so the cache is bounded by the number of stations.
+;;
+;; Structure:
+;; {[:us "KSFO"] {:timestamp   ms
+;;                :observation {:station {:name :id :timestamp} :observations {...}}
+;;                :via         "rest" or "xml"
+;;                ...other diagnostics from the source's fetch-observation!}}
+(defonce ^:private observation-cache (atom {}))
+
+(defn- observation-fresh?
+  "True when a cached observation is younger than ttl-seconds at time now (ms)."
+  [{:keys [timestamp]} ttl-seconds now]
+  (and (int? timestamp)
+       (< (- now timestamp) (* 1000 ttl-seconds))))
+
+(defn- get-observation-cached!
+  "Returns the cached observation of a station when it's fresh, and calls
+  fetch-observation! otherwise. fetch-observation! returns a map of
+  :observation (nil when there's none) plus diagnostics (:via,
+  :upstream-status, :xml-path). When the fetch has no observation, falls back
+  to the stale cached one. The result is that map plus :cache: \"hit:
+  <timestamp>\", \"miss\", or \"stale: <timestamp>\".
+  The station id is stationIdentifier for :us and msc_id for :ca."
+  [source-id station-id fetch-observation!]
+  (let [cache-key   [source-id station-id]
+        cached      (get @observation-cache cache-key)
+        ttl-seconds (:observation-ttl-seconds (get-source-config source-id))
+        now         (System/currentTimeMillis)]
+    (if (observation-fresh? cached ttl-seconds now)
+      (-> (dissoc cached :timestamp)
+          (assoc :cache (str "hit: " (Instant/ofEpochMilli (:timestamp cached)))))
+      (let [fetched (try
+                      (fetch-observation!)
+                      (catch Exception e
+                        (log-str "ERROR: Weather stations: unable to fetch the observation of "
+                                 (name source-id) " station " station-id ": " (ex-message e))
+                        {:upstream-status (str "error: " (ex-message e))}))]
+        (cond
+          (:observation fetched)
+          (do (swap! observation-cache assoc cache-key (assoc fetched :timestamp now))
+              (assoc fetched :cache "miss"))
+
+          cached
+          (-> (dissoc cached :timestamp)
+              (assoc :cache           (str "stale: " (Instant/ofEpochMilli (:timestamp cached)))
+                     :upstream-status (:upstream-status fetched)))
+
+          :else
+          (assoc fetched :cache "miss"))))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Responses
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn- build-points-cache-header
+  "The X-Points-Cache header value, eg \"us=hit: <ts>, ca=stale: <ts>, ca-xml-index=empty\"."
+  [source-cache-value]
+  (->> [:us :ca :ca-xml-index]
+       (map #(str (name %) "=" (source-cache-status (get source-cache-value %))))
+       (interpose ", ")
+       (apply str)))
+
+(defn- build-observation-response
+  "Builds the response for an observation from the result of
+  get-observation-cached!. Diagnostic headers tell where the observation came
+  from, or why there's none."
+  [{:keys [observation cache via upstream-status xml-path]}]
+  (let [response (if observation
+                   (data-response observation)
+                   (data-response "Observation not available." {:status 404}))]
+    (cond-> (assoc-in response [:headers "X-Observation-Cache"] cache)
+      via             (assoc-in [:headers "X-Observation-Source"] via)
+      upstream-status (assoc-in [:headers "X-Upstream-Status"] upstream-status)
+      xml-path        (assoc-in [:headers "X-Xml-Path"] xml-path))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Request Handlers
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(def ^:private source-names->ids
+  "The :source values of the features, as the client sends them back."
+  {"us" :us
+   "ca" :ca})
+
+(defn- fetch-observation!
+  "Calls the source's fetch-observation! with what it needs from the source
+  cache. The station id is stationIdentifier for :us and msc_id for :ca."
+  [source-id station-id]
+  (case source-id
+    :us (us/fetch-observation! station-id)
+    :ca (ca/fetch-observation! station-id
+                               (get-in @source-cache [:ca :stations station-id])
+                               (get-in @source-cache [:ca-xml-index :partner-folders station-id]))))
 
 (defn get-weather-stations
+  "Handles a get-weather-stations request. Returns a FeatureCollection that
+  merges the cached stations of all sources. Never fetches: the refresh loops
+  fill the cache."
   [_]
-  {:type     "FeatureCollection"
-   :features @observation-stations})
+  (let [cache @source-cache]
+    (-> (data-response {:type     "FeatureCollection"
+                        :features (mapcat #(get-in cache [% :features]) [:us :ca])})
+        (assoc-in [:headers "X-Points-Cache"] (build-points-cache-header cache)))))
+
+(defn get-weather-station-observation
+  "Handles a get-weather-station-observation request: the latest observation
+  of a station, as {:station {:name :id :timestamp} :observations {display-name
+  value}}, or a 404 when there's none. Only stations in the cached lists are
+  looked up. source is the feature's :source (\"us\" or \"ca\"), and station-id
+  its :station-id."
+  [_ source station-id]
+  (let [source-id (get source-names->ids source)
+        cache     @source-cache]
+    (cond
+      (nil? source-id)
+      (data-response "Invalid weather station source." {:status 403})
+
+      (not (contains? (get-in cache [source-id :stations]) station-id))
+      (-> (data-response "Unknown weather station." {:status 404})
+          (assoc-in [:headers "X-Points-Cache"] (build-points-cache-header cache)))
+
+      :else
+      (build-observation-response
+       (get-observation-cached! source-id
+                                station-id
+                                #(fetch-observation! source-id station-id))))))

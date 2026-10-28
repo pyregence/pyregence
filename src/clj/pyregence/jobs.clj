@@ -4,7 +4,7 @@
             [clojure.string             :as str]
             [pyregence.capabilities     :refer [set-all-capabilities!]]
             [pyregence.throttle         :refer [sweep!]]
-            [pyregence.weather-stations-new :as weather-stations]
+            [pyregence.weather-stations :as weather-stations]
             [triangulum.config          :refer [get-config]]
             [triangulum.logging         :refer [log-str]]))
 

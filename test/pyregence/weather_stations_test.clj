@@ -1,6 +1,6 @@
-(ns pyregence.weather-stations-new-test
-  (:require [clojure.test                  :refer [deftest is testing use-fixtures]]
-            [pyregence.weather-stations-new :as ws]))
+(ns pyregence.weather-stations-test
+  (:require [clojure.test               :refer [deftest is testing use-fixtures]]
+            [pyregence.weather-stations :as ws]))
 
 ;; The functions under test are private, so they're called through their vars:
 ;; #'ws/source-cache-status is the var, and calling it calls the function.
