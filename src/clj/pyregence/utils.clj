@@ -1,7 +1,8 @@
 (ns pyregence.utils
   (:require
    [clj-http.client  :as client]
-   [clojure.data.xml :as xml])
+   [clojure.data.xml :as xml]
+   [clojure.walk :as walk])
   (:import
    [java.text SimpleDateFormat]
    [java.time LocalDateTime ZonedDateTime ZoneOffset]
@@ -97,26 +98,31 @@
              rounded-datetime)))
 
 (defn url->response-body!
-  [url]
-  (try
-    (let [{:keys [body status]}
-          (client/get
-           url
-           {:throw-exceptions   false
-            :connection-timeout 8000
-            :socket-timeout     100000})]
-      (when (= 200 status) body))
-    (catch java.net.ConnectException e
-      (println "Connection failed:" url))
-    (catch java.net.SocketTimeoutException e
-      (println "Connection timed out:" url))
-    (catch org.apache.http.ConnectionClosedException e
-      (println "Connection closed: " url))))
+  ([url]
+   (url->response-body! url {}))
+  ([url config]
+   (try
+     (let [{:keys [body status]}
+           (client/get
+            url
+            (merge
+             {:throw-exceptions   false
+              :connection-timeout 8000
+              :socket-timeout     100000}
+             config))]
+       (when (= 200 status) body))
+     (catch java.net.ConnectException e
+       (println "Connection failed:" url))
+     (catch java.net.SocketTimeoutException e
+       (println "Connection timed out:" url))
+     (catch org.apache.http.ConnectionClosedException e
+       (println "Connection closed: " url)))))
 
 
 (defn xml-str->safe-parse-str
   [xml-str]
   (try
-    (xml/parse-str xml-str :lazy false)
+    ;;TODO this is to undo the lazy eval so we can check if it's valid xml before throwing down the line
+    (walk/postwalk identity (xml/parse-str xml-str))
     (catch Exception _
       nil)))

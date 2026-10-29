@@ -54,29 +54,9 @@
           (some->> ca-non-partner-url
                    url->response-body!
                    html-str->hrefs
-                   (reduce
-                    (fn [l id]
-                      (conj l
-                            (let [url  (str ca-non-partner-url id)
-                                  {{msc-id :value} :msc_id
-                                   {lat :value} :lat
-                                   {long :value} :long}
-                                  (some-> url
-                                          url->response-body!
-                                          xml-str->safe-parse-str
-                                          xml->obs-name->obs)]
-                              {:msc_id      msc-id
-                               :url         url
-                               :lat         lat
-                               :long        long})))
-                    [])
-               ;; prefer minute
-                   (group-by :url)
-                   (reduce-kv (fn [l _ ids] (conj l (->> ids (sort-by :url) first))) [])
-               ;; follow spec client expects
-                   (map (fn [{:keys [lat long url msc_id]}]
-                          {:geometry {:coordinates [long lat] :type "Point"}
-                           :properties {:msc_id msc_id :url url :latitude lat :longitude long}}))))
+                   (map #(-> % (str/split #"-") first)) ;; TODO record minute info so we can potentially use it
+                   (map (fn [iata_id] {:properties {:iata_id iata_id}}))
+                   set))
         partner-xml-stations
         (->>
          (let [url->urls #(some->> % url->response-body! html-str->hrefs)]
@@ -87,42 +67,27 @@
                                (pmap (fn [date]
                                        (let [date-url (str network-url "/" date)]
                                          (->> (url->urls date-url)
-                                              (pmap (fn [stn_id]
-                                                      (let [xml-files-url     (str date-url "/" stn_id)
-                                                            xml-file-url      (first (url->urls xml-files-url))
-                                                            full-xml-file-url (str xml-files-url "/" xml-file-url)
-                                                            {:keys [msc_id lat long stn_id] :as r}
-                                                            (some->> xml-file-url
-                                                                     (str xml-files-url "/")
-                                                                     url->response-body!
-                                                                     xml-str->safe-parse-str
-                                                                     xml->obs-k->val&uom)]
-                                                        (when r
-                                                          {:geometry {:coordinates [long lat]
-                                                                      :type "Point"}
-                                                           :properties
-                                                           {:msc_id    (:value msc_id)
-                                                            :network   network
-                                                            :stn_id    (:value stn_id)
-                                                            :latitude  (:value lat)
-                                                            :longitude (:value long)}}))))))))))))))
+                                              (pmap (fn [iata_id]
+                                                      {:properties
+                                                       {:network network
+                                                        :iata_id (str/upper-case iata_id)}}))))))))))))
          flatten
-         (remove nil?))]
+         (remove nil?)
+         set)]
     (concat partner-xml-stations non-partner-xml-stations)))
 
 (defn get-observations
-  [_ {:keys [network stn_id url]}]
-  (let [verify-url #(when (str/starts-with? % ca-non-partner-url) %)
+  [_ {:keys [network iata_id]}]
+  (let [iata_id (str/lower-case iata_id)
         url->val&uom
         (fn [url]
-          (some->> url
-                  verify-url
-                  url->response-body!
-                  xml-str->safe-parse-str
-                  xml->obs-k->val&uom))
+          (some->> (str url)
+                   url->response-body!
+                   xml-str->safe-parse-str
+                   xml->obs-k->val&uom))
         observations
-        (if url
-          (url->val&uom url)
+        (if-not network
+          (->  (str ca-non-partner-url iata_id "-AUTO-swop.xml") url->val&uom)
           (let [partial-partner-url
                 (str
                  ca-partner-url
@@ -130,7 +95,7 @@
                  "/"
                  (.format (ZonedDateTime/now ZoneOffset/UTC) (DateTimeFormatter/ofPattern "yyyyMMdd"))
                  "/"
-                 (str/lower-case stn_id)
+                 iata_id
                  "/")]
             (some->>
              partial-partner-url
