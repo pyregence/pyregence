@@ -97,21 +97,25 @@
              rounded-datetime)))
 
 (defn url->response-body!
-  [url]
-  (try
-    (let [{:keys [body status]}
-          (client/get
-           url
-           {:throw-exceptions   false
-            :connection-timeout 8000
-            :socket-timeout     100000})]
-      (when (= 200 status) body))
-    (catch java.net.ConnectException e
-      (println "Connection failed:" url))
-    (catch java.net.SocketTimeoutException e
-      (println "Connection timed out:" url))
-    (catch org.apache.http.ConnectionClosedException e
-      (println "Connection closed: " url))))
+  ([url]
+   (url->response-body! url {}))
+  ([url config]
+   (try
+     (let [{:keys [body status]}
+           (client/get
+            url
+            (merge
+             {:throw-exceptions   false
+              :connection-timeout 8000
+              :socket-timeout     100000}
+             config))]
+       (when (= 200 status) body))
+     (catch java.net.ConnectException e
+       (println "Connection failed:" url))
+     (catch java.net.SocketTimeoutException e
+       (println "Connection timed out:" url))
+     (catch org.apache.http.ConnectionClosedException e
+       (println "Connection closed: " url)))))
 
 
 (defn xml-str->safe-parse-str
