@@ -116,5 +116,5 @@
   [xml-str]
   (try
     (xml/parse-str xml-str)
-    (catch javax.xml.stream.XMLStreamException _
+    (catch Exception _
       nil)))
