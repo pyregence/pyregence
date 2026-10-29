@@ -36,8 +36,7 @@
                                                :msc_id
                                                :name_en
                                                :network
-                                               :stn_id
-                                               :url])
+                                               :iata_id])
               (update :properties assoc :longitude lon :latitude lat)))]
     (reset! observation-stations
             (->> (get-US-observation-stations!)
