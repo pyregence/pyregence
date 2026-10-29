@@ -109,7 +109,9 @@
     (catch java.net.ConnectException e
       (println "Connection failed:" url))
     (catch java.net.SocketTimeoutException e
-      (println "Connection timed out:" url))))
+      (println "Connection timed out:" url))
+    (catch org.apache.http.ConnectionClosedException e
+      (println "Connection closed: " url))))
 
 
 (defn xml-str->safe-parse-str
