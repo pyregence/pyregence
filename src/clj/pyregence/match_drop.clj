@@ -177,13 +177,9 @@
                     :display_name          :display-name
                     :job_log               :job-log
                     :elmfire_done          :elmfire-done?
-                    :dps_request           :dps-request
-                    :elmfire_request       :elmfire-request
-                    :geosync_request       :geosync-request
+                    :pyretechnics_done     :pyretechnics-done?
                     :geoserver_workspace   :geoserver-workspace})
-      (update :dps-request json->clj)
-      (update :elmfire-request json->clj)
-      (update :geosync-request json->clj)))
+      (update :request json->clj)))
 
 (defn- get-match-job-from-match-job-id!
   "Returns a specific entry in the match_jobs table based on its (internal) match-job-id."
@@ -243,9 +239,8 @@
            display-name
            message
            elmfire-done?
-           dps-request
-           elmfire-request
-           geosync-request
+           pyretechnics-done?
+           request
            geoserver-workspace
            model]}]
   {:pre [(some? match-job-id)]}
@@ -256,11 +251,8 @@
             display-name
             message
             elmfire-done?
-            nil ; gridfire_done (unused, kept for SQL positional compat)
-            (when dps-request (clj->json dps-request))
-            (when elmfire-request (clj->json elmfire-request))
-            nil ; gridfire_request (unused, kept for SQL positional compat)
-            (when geosync-request (clj->json geosync-request))
+            pyretechnics-done?
+            (when request (clj->json request))
             geoserver-workspace
             model))
 
@@ -432,7 +424,10 @@
                                                                       "failure" (str "Step " step " FAILED.\nResult:\n" result)
                                                                       "success" (str "Step " step " DONE.\nResult:\n" result))}
                                              (and (= step "mdrop-elmfire") (= "success" status))
-                                             (assoc :elmfire-done? true))))
+                                             (assoc :elmfire-done? true)
+
+                                             (and (= step "mdrop-pyretechnics") (= "success" status))
+                                             (assoc :pyretechnics-done? true))))
                       (doseq [[_ step status] transitions]
                         (swap! state assoc-in [step status] true))
                       (if job-done?
@@ -473,9 +468,8 @@
                             :md-status           2
                             :message             "Match Drop initiated from Pyrecast."
                             :elmfire-done?       false
-                            :dps-request         match-drop-inputs
-                            :elmfire-request     {}
-                            :geosync-request     {}
+                            :pyretechnics-done?  false
+                            :request             match-drop-inputs
                             :match-job-id        match-job-id
                             :sig3-job-id         job-id
                             :model               model
@@ -608,16 +602,15 @@
   [{:keys [user-id]} match-job-unique-id]
   (let [job (get-match-job-from-uuid! match-job-unique-id)]
     (if (and job (= user-id (:user-id job)))
-      (let [match-job-id                              (:match-job-id job)
-            sig3                                      (get-match-job-sig3 match-job-id)
-            {:keys [dps-request geoserver-workspace]} (get-match-job-from-match-job-id! match-job-id)
-            original-request                          dps-request ; TODO https://sig-gis.atlassian.net/browse/PYR1-1317
-            geosync-host                              (:geosync-host dps-request)
-            geosync-port                              (:geosync-port dps-request)]
+      (let [match-job-id                          (:match-job-id job)
+            sig3                                  (get-match-job-sig3 match-job-id)
+            {:keys [request geoserver-workspace]} (get-match-job-from-match-job-id! match-job-id)
+            geosync-host                          (:geosync-host request)
+            geosync-port                          (:geosync-port request)]
         (if (layers-exist? :match-drop geoserver-workspace)
           ;; If the specified workspace exists in the layer atom, we need to use GeoSync to remove the workspace from the GeoServer
           (try
-            (-> (submit-match-drop-removal-job! sig3 original-request)
+            (-> (submit-match-drop-removal-job! sig3 request)
                 (poll-delete-match-drop-results-then-remove-from-db! sig3 match-job-id))
             (data-response (str "The " geoserver-workspace " workspace is queued to be removed from "
                                 (get-config :triangulum.views/client-keys :geoserver :match-drop) "."))
