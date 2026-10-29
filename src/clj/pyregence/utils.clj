@@ -117,6 +117,6 @@
 (defn xml-str->safe-parse-str
   [xml-str]
   (try
-    (xml/parse-str xml-str)
+    (xml/parse-str xml-str :lazy false)
     (catch Exception _
       nil)))
