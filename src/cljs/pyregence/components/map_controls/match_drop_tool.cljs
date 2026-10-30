@@ -43,7 +43,7 @@
    the simulation. Chrome is currently the only supported browser for Match Drop.")
 
 (def cawfe-instructions
-  "Simulates a 5 hour fire with CAWFE, which downscales the NAM forecast and models
+  "Simulates a 5 hour fire with CAWFE, which downscales the RRFS 13km forecast and models
    the fire's feedback on the local atmosphere. Click on any CONUS location to
    \"drop\" a match, then set the date and time to begin the simulation. Chrome is
    currently the only supported browser for Match Drop.")
@@ -54,7 +54,7 @@
    "standard" {:opt-label "STANDARD"
                :tooltip   "ELMFIRE and Pyretechnics running on LANDFIRE fuels and topography, driven by Hybrid weather (HRRR, RRFS and GFS 0.125\u00B0). A 200 member ensemble over 72 hours."}
    "cawfe"    {:opt-label "CAWFE"
-               :tooltip   "The Coupled Atmosphere-Wildland Fire Environment model. It downscales the NAM forecast and simulates how the fire feeds back on local weather, which the other models cannot do. Forecast weather only, a fixed 5 hour window, and much slower to run."}))
+               :tooltip   "The Coupled Atmosphere-Wildland Fire Environment model. It downscales the RRFS forecast and simulates how the fire feeds back on local weather, which the other models cannot do. Forecast weather only, a fixed 5 hour window, and much slower to run."}))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Helper Functions
