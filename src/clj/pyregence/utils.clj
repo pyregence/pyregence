@@ -1,9 +1,13 @@
 (ns pyregence.utils
-  (:import  [java.util TimeZone]
-            [java.text SimpleDateFormat]
-            [java.time LocalDateTime ZonedDateTime ZoneOffset]
-            [java.time.format DateTimeFormatter]
-            [java.time.temporal ChronoUnit]))
+  (:require
+   [clj-http.client  :as client]
+   [clojure.data.xml :as xml])
+  (:import
+   [java.text SimpleDateFormat]
+   [java.time LocalDateTime ZonedDateTime ZoneOffset]
+   [java.time.format DateTimeFormatter]
+   [java.time.temporal ChronoUnit]
+   [java.util TimeZone]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Utility Functions
@@ -91,3 +95,28 @@
                              (.truncatedTo ChronoUnit/HOURS))]
     (.format (DateTimeFormatter/ofPattern "yyyy-MM-dd'T'HH:mm'Z'")
              rounded-datetime)))
+
+(defn url->response-body!
+  [url]
+  (try
+    (let [{:keys [body status]}
+          (client/get
+           url
+           {:throw-exceptions   false
+            :connection-timeout 8000
+            :socket-timeout     100000})]
+      (when (= 200 status) body))
+    (catch java.net.ConnectException e
+      (println "Connection failed:" url))
+    (catch java.net.SocketTimeoutException e
+      (println "Connection timed out:" url))
+    (catch org.apache.http.ConnectionClosedException e
+      (println "Connection closed: " url))))
+
+
+(defn xml-str->safe-parse-str
+  [xml-str]
+  (try
+    (xml/parse-str xml-str :lazy false)
+    (catch Exception _
+      nil)))
