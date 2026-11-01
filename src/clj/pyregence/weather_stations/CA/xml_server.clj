@@ -141,3 +141,109 @@
              (str partial-partner-url)
              url->val&uom)))]
     (data-response observations {:status (if observations 200 404)})))
+
+
+(comment
+  ;; compare timeouts reading xml file vs not for partner stations
+
+  (require
+   '[clj-http.client  :as client])
+
+  (def failures (atom 0))
+
+  (defn url->response-body!
+    ([url]
+     (url->response-body! url {}))
+    ([url config]
+     (try
+       (let [{:keys [body status]}
+             (client/get
+              url
+              (merge
+               {:throw-exceptions   false
+                :connection-timeout 8000
+                :socket-timeout     100000}
+               config))]
+         (when (= 200 status) body))
+       (catch java.net.ConnectException e
+         (swap! failures inc)
+         (println "Connection failed:" url))
+       (catch java.net.SocketTimeoutException e
+         (swap! failures inc)
+         (println "Connection timed out:" url))
+       (catch org.apache.http.ConnectionClosedException e
+         (swap! failures inc)
+         (println "Connection closed: " url)))))
+
+  (def partner-read-files
+    (->>
+     (let [url->urls #(some->> % url->response-body! html-str->hrefs)]
+       (->> (url->urls ca-partner-url)
+            (pmap (fn [network]
+                    (let [network-url (str ca-partner-url network)]
+                      (->> (url->urls network-url)
+                           (pmap (fn [date]
+                                   (let [date-url (str network-url "/" date)]
+                                     (->> (url->urls date-url)
+                                          (pmap (fn [stn_id]
+                                                  (let [xml-files-url     (str date-url "/" stn_id)
+                                                        xml-file-url      (first (url->urls xml-files-url))
+                                                        full-xml-file-url (str xml-files-url "/" xml-file-url)
+                                                        {:keys [msc_id lat long stn_id] :as r}
+                                                        (some->> xml-file-url
+                                                                 (str xml-files-url "/")
+                                                                 url->response-body!
+                                                                 xml-str->safe-parse-str
+                                                                 xml->obs-k->val&uom)]
+                                                    (when r
+                                                      {:geometry {:coordinates [long lat]
+                                                                  :type "Point"}
+                                                       :properties
+                                                       {:msc_id    (:value msc_id)
+                                                        :network   network
+                                                        :stn_id    (:value stn_id)
+                                                        :latitude  (:value lat)
+                                                        :longitude (:value long)}}))))))))))))))
+     flatten
+     (remove nil?)))
+
+  (count partner-read-files)
+  ;; => 1584
+
+  @failures
+  ;; => 34
+
+  (reset! failures 0)
+
+  (def partner-dont-read-files
+    (->>
+     (let [url->urls #(some->> % url->response-body! html-str->hrefs)]
+       (->> (url->urls ca-partner-url)
+            (pmap (fn [network]
+                    (let [network-url (str ca-partner-url network)]
+                      (->> (url->urls network-url)
+                           (pmap (fn [date]
+                                   (let [date-url (str network-url "/" date)]
+                                     (->> (url->urls date-url)
+                                          (pmap (fn [stn_id]
+                                                  (let [xml-files-url     (str date-url "/" stn_id)
+                                                        xml-file-url      (first (url->urls xml-files-url))
+                                                        full-xml-file-url (str xml-files-url "/" xml-file-url)]
+                                                    full-xml-file-url)))))))))))))
+     flatten
+     (remove nil?)))
+
+  (count partner-dont-read-files)
+   ;; => 1618
+
+  @failures
+  ;; => 4
+
+  (-
+   (count partner-dont-read-files)
+   (count partner-read-files))
+  ;; => 34
+
+
+;;
+  )
