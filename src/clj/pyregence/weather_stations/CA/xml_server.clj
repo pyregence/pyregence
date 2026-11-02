@@ -81,13 +81,13 @@
         (->>
          (let [url->urls #(some->> % url->response-body! html-str->hrefs)]
            (->> (url->urls ca-partner-url)
-                (pmap (fn [network]
+                (map (fn [network]
                         (let [network-url (str ca-partner-url network)]
                           (->> (url->urls network-url)
-                               (pmap (fn [date]
+                               (map (fn [date]
                                        (let [date-url (str network-url "/" date)]
                                          (->> (url->urls date-url)
-                                              (pmap (fn [stn_id]
+                                              (map (fn [stn_id]
                                                       (let [xml-files-url     (str date-url "/" stn_id)
                                                             xml-file-url      (first (url->urls xml-files-url))
                                                             full-xml-file-url (str xml-files-url "/" xml-file-url)
