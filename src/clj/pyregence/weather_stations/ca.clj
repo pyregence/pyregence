@@ -103,7 +103,7 @@
 ;; Stations
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn- fetch-station-collection!
+(defn fetch-station-collection!
   "Every feature of a REST station collection (eg \"swob-stations\"),
   following its next links. Throws when a page can't be fetched."
   [collection]

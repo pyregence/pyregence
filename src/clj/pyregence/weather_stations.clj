@@ -68,9 +68,14 @@
   "Calls fetch! and replaces the source's cache entry with its result.
   A result without :features or :partner-folders counts as a failure. On
   failure, keeps the previous value and records :failed-at. Returns true when
-  the refresh succeeded."
+  the refresh succeeded.
+  Results with :features come from requests to the REST API; those with
+  :partner-folders come from scanning the XMLs directory, done by
+  `fetch-partner-folders!`"
   [source-id fetch!]
   (try
+    ;; See `get-refresh-loops`, which provides the
+    ;; `fetch!` function for each source.
     (let [values (fetch!)]
       (if (or (seq (:features values)) (seq (:partner-folders values)))
         (do (swap! source-cache assoc source-id (assoc values :timestamp (System/currentTimeMillis)))
