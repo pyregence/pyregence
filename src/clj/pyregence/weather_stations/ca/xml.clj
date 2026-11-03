@@ -19,6 +19,9 @@
 ;; station uses, so an index built from the directory listings maps stations
 ;; to them. scratchpad/ca-xml-coverage.bb measured the rules below: they map
 ;; about 93% of the partner stations, and the rest had no XML on the server.
+;; A folder name can appear in several networks (3 at most), each holding a
+;; different station's files; partner file names contain the station's
+;; msc_id, which tells them apart. See weather_station_probing.clj.
 ;;
 ;; The server throttles bursts (about 20% timeouts with 8 concurrent
 ;; requests), so requests go one at a time, with short timeouts.
@@ -146,54 +149,18 @@
               {:folder folder :networks networks})))
         partner-folder-rules))
 
-(defn msc-id->provider
-  "The part of an msc_id before its last _ (BC_ENV-AQ_110 -> BC_ENV-AQ),
-  which groups the stations of a data provider. Lighthouse msc_ids have no _
-  and form one group."
-  [msc-id]
-  (if-let [i (str/last-index-of msc-id "_")]
-    (subs msc-id 0 i)
-    ""))
-
-(defn learn-provider-networks
-  "Maps each provider to its networks: those holding at least 10% of the
-  provider's single-network matches. matches maps msc_id to the result of
-  match-partner-folder. Almost every provider uses one network (NWT_ENR
-  uses two), so this resolves folder names found in several networks."
-  [matches]
-  (let [provider->network-counts (->> matches
-                                      (filter (fn [[_ {:keys [networks]}]] (= 1 (count networks))))
-                                      (group-by (fn [[msc-id _]] (msc-id->provider msc-id)))
-                                      (map (fn [[provider provider-matches]]
-                                             [provider (frequencies (map (fn [[_ {:keys [networks]}]] (first networks))
-                                                                         provider-matches))])))]
-    (into {}
-          (for [[provider network-counts] provider->network-counts
-                :let [total (reduce + (vals network-counts))]]
-            [provider (set (for [[network n] network-counts
-                                 :when (>= n (* 0.1 total))]
-                             network))]))))
-
 (defn build-partner-folders
-  "Maps the msc_id of each partner station to its {:network :folder}.
-  Narrows each match to the networks of the station's provider, and leaves
-  out stations that still match several networks, or only networks outside
-  their provider's (a same-name folder of another network, while the
-  station's own folder is missing)."
+  "Maps the msc_id of each partner station a rule matches to its {:folder
+  :networks}: the folder name, and every network with a folder by that name.
+  When there are several, find-partner-xml-path! picks the station's by file
+  name."
   [stations folder->networks]
-  (let [matches            (into {}
-                                 (for [[msc-id station] stations
-                                       :when (:partner? station)
-                                       :let [match (match-partner-folder folder->networks msc-id station)]
-                                       :when match]
-                                   [msc-id match]))
-        provider->networks (learn-provider-networks matches)]
-    (into {}
-          (for [[msc-id {:keys [folder networks]}] matches
-                :let [provider-networks (get provider->networks (msc-id->provider msc-id) #{})
-                      narrowed          (filter provider-networks networks)]
-                :when (= 1 (count narrowed))]
-            [msc-id {:network (first narrowed) :folder folder}]))))
+  (into {}
+        (for [[msc-id station] stations
+              :when (:partner? station)
+              :let [match (match-partner-folder folder->networks msc-id station)]
+              :when match]
+          [msc-id match])))
 
 (defn- fetch-folder->networks!
   "Maps every partner station folder name to the networks it appears in, from
@@ -223,7 +190,7 @@
 (defn fetch-partner-folders!
   "Builds the partner folder index for the CA stations (msc_id to station
   details, from pyregence.weather-stations.ca/fetch-stations!). Returns a map
-  of :partner-folders, msc_id to {:network :folder}. Throws when the station
+  of :partner-folders, msc_id to {:folder :networks}. Throws when the station
   list isn't loaded yet, so the refresh loop retries later."
   [stations]
   (when (empty? stations)
@@ -253,28 +220,50 @@
                 :when (= :element tag)]
             [(:name attrs) {:value (:value attrs) :uom (:uom attrs)}]))))
 
-(defn- find-partner-xml-path!
-  "The path of the newest XML in a partner station's folder: today's, or
+(defn msc-id->file-name-part
+  "The part of a partner XML file name that identifies the station: its
+  msc_id lowercased, with _ as - (AB-MAI_BROC -> ab-mai-broc, as in
+  2026-11-01-2300-ab-mai-broc-AUTO-swob.xml)."
+  [msc-id]
+  (str/replace (str/lower-case msc-id) "_" "-"))
+
+(defn- find-newest-xml-path!
+  "The path of the newest XML in a network's station folder: today's, or
   yesterday's when today's is missing or has no XML yet (just after 00:00
-  UTC). One listing request per date tried. Returns {:path} or {:status}."
-  [{:keys [network folder]}]
+  UTC). One listing request per date tried. nil when neither has an XML."
+  [network folder]
+  (let [today     (get-utc-date 0)
+        yesterday (get-utc-date 1)]
+    (some (fn [date]
+            (let [folder-path (partner-folder-path date today network folder)
+                  newest      (some-> (fetch-listing! folder-path 1) :listing :files pick-newest-xml)]
+              (when newest
+                (str folder-path newest))))
+          [today yesterday])))
+
+(defn- find-partner-xml-path!
+  "The path of a partner station's newest XML. partner-folder is its entry in
+  the partner folder index, {:folder :networks}. Tries the networks one at a
+  time, until the newest XML in the network's folder has the station's
+  msc_id in its file name. Returns {:path} or {:status}."
+  [msc-id {:keys [folder networks]}]
   (if-not folder
     {:status "xml=no folder in the index"}
-    (let [today     (get-utc-date 0)
-          yesterday (get-utc-date 1)]
-      (or (some (fn [date]
-                  (let [folder-path (partner-folder-path date today network folder)
-                        newest      (some-> (fetch-listing! folder-path 1) :listing :files pick-newest-xml)]
-                    (when newest
-                      {:path (str folder-path newest)})))
-                [today yesterday])
-          {:status "xml=no file in today's or yesterday's folder"}))))
+    (let [file-name-part (msc-id->file-name-part msc-id)]
+      (or (some (fn [network]
+                  (let [path      (find-newest-xml-path! network folder)
+                        file-name (when path (last (str/split path #"/")))]
+                    (when (and file-name (str/includes? (str/lower-case file-name) file-name-part))
+                      {:path path})))
+                (sort networks))
+          {:status "xml=no file with the station's msc_id"}))))
 
 (defn fetch-station-elements!
   "Fetches the newest SWOB XML of a CA station and parses it. msc-id is the
   station's msc_id, station its details from
   pyregence.weather-stations.ca/fetch-stations!, and partner-folder its entry
-  in the partner folder index (nil when it has none). Returns a map of:
+  in the partner folder index, {:folder :networks} (nil when it has none).
+  Returns a map of:
   - :elements, from parse-swob-elements, or nil when there's no usable XML
   - :status, what happened, for the diagnostic headers
   - :path, the XML's path on the server, when one was found
@@ -282,7 +271,7 @@
   stations would otherwise give another station's observation."
   [msc-id {:keys [partner? iata-id auto-man]} partner-folder]
   (let [{:keys [path status]} (if partner?
-                                (find-partner-xml-path! partner-folder)
+                                (find-partner-xml-path! msc-id partner-folder)
                                 {:path (latest-file-path iata-id auto-man)})]
     (if-not path
       {:status status}

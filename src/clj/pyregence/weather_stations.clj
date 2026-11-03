@@ -48,7 +48,7 @@
 ;;                 :features  [vector of Features]
 ;;                 :stations  {msc-id {station details, including what the XML path needs}}}
 ;;  :ca-xml-index {:timestamp ms
-;;                 :partner-folders {msc-id {:network :folder}}}}
+;;                 :partner-folders {msc-id {:folder :networks}}}}
 (defonce ^:private source-cache (atom {}))
 
 (defn- source-cache-status

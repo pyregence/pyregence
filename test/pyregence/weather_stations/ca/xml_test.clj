@@ -44,42 +44,30 @@
     (testing "no folder"
       (is (nil? (xml/match-partner-folder folder->networks "MB-SD_SNOW" {:iata-id "SNOW"}))))))
 
-(deftest msc-id->provider-test
-  (is (= "BC_ENV-AQ" (xml/msc-id->provider "BC_ENV-AQ_110")))
-  (is (= "AB-MAF" (xml/msc-id->provider "AB-MAF_ALA")))
-  (is (= "" (xml/msc-id->provider "1018238"))))
-
 (deftest build-partner-folders-test
-  ;; Folder 110 exists in two networks; the provider's other stations are all
-  ;; in bc-env-aq. Folder 201 only exists in mb_agriculture, but BC_WMB
-  ;; stations (ten of them here) live in bc-forestry, so that match is a
-  ;; same-name folder of another network.
-  (let [bc-wmb-folders   (map str (range 1001 1011))
-        folder->networks (merge {"104" #{"bc-env-aq"}
-                                 "105" #{"bc-env-aq"}
-                                 "110" #{"bc-env-aq" "bc-forestry"}
-                                 "201" #{"mb_agriculture"}}
-                                (zipmap bc-wmb-folders (repeat #{"bc-forestry"})))
-        stations         (merge {"BC_ENV-AQ_104" {:iata-id "104" :partner? true}
-                                 "BC_ENV-AQ_105" {:iata-id "105" :partner? true}
-                                 "BC_ENV-AQ_110" {:iata-id "110" :partner? true}
-                                 "BC_WMB_201"    {:iata-id "201" :partner? true}
-                                 "1012475"       {:iata-id "104" :partner? false}}
-                                (into {}
-                                      (for [folder bc-wmb-folders]
-                                        [(str "BC_WMB_" folder) {:iata-id folder :partner? true}])))
+  (let [folder->networks {"104" #{"bc-env-aq"}
+                          "110" #{"bc-env-aq" "bc-forestry"}}
+        stations         {"BC_ENV-AQ_104" {:iata-id "104" :partner? true}
+                          "BC_ENV-AQ_110" {:iata-id "110" :partner? true}
+                          "MB-SD_SNOW"    {:iata-id "SNOW" :partner? true}
+                          "1012475"       {:iata-id "104" :partner? false}}
         partner-folders  (xml/build-partner-folders stations folder->networks)]
-    (testing "a folder in several networks is narrowed to the provider's network"
-      (is (= {:network "bc-env-aq" :folder "110"} (get partner-folders "BC_ENV-AQ_110"))))
+    (testing "plain matches"
+      (is (= {:folder "104" :networks #{"bc-env-aq"}} (get partner-folders "BC_ENV-AQ_104"))))
 
-    (testing "a match outside the provider's networks is left out"
-      (is (not (contains? partner-folders "BC_WMB_201"))))
+    (testing "a folder in several networks keeps all of them"
+      (is (= {:folder "110" :networks #{"bc-env-aq" "bc-forestry"}} (get partner-folders "BC_ENV-AQ_110"))))
+
+    (testing "stations without a folder are left out"
+      (is (not (contains? partner-folders "MB-SD_SNOW"))))
 
     (testing "non-partner stations are left out"
-      (is (not (contains? partner-folders "1012475"))))
+      (is (not (contains? partner-folders "1012475"))))))
 
-    (testing "plain matches"
-      (is (= {:network "bc-forestry" :folder "1002"} (get partner-folders "BC_WMB_1002"))))))
+(deftest msc-id->file-name-part-test
+  (is (= "ab-mai-broc" (xml/msc-id->file-name-part "AB-MAI_BROC")))
+  (is (= "bc-env-aq-138" (xml/msc-id->file-name-part "BC_ENV-AQ_138")))
+  (is (= "1063298" (xml/msc-id->file-name-part "1063298"))))
 
 (deftest observation-paths-test
   (is (= "/today/observations/swob-ml/partners/ab-firewx/20261028/ala/"
@@ -147,7 +135,26 @@
                                         (str/starts-with? path "/today/") {:status 404}
                                         (str/ends-with? path "/")         {:status 200 :body listing}
                                         :else                             {:status 200 :body partner-xml}))]
-          (let [result (xml/fetch-station-elements! "AB-MAF_ALA" {:partner? true} {:network "ab-firewx" :folder "ala"})]
+          (let [result (xml/fetch-station-elements! "AB-MAF_ALA" {:partner? true} {:folder "ala" :networks #{"ab-firewx"}})]
             (is (str/ends-with? (:path result) "/ala/2026-10-27-1800-ab-maf-ala-AUTO-swob.xml"))
             (is (str/includes? (:path result) "/WXO-DD/"))
-            (is (= "2.6" (get-in result [:elements "air_temp" :value])))))))))
+            (is (= "2.6" (get-in result [:elements "air_temp" :value])))))))
+
+    (testing "a folder name in several networks: the one whose file name has the station's msc_id"
+      ;; ab-firewx sorts first, and its ala folder holds another station's files
+      (let [listing       (read-fixture "dd-station-folder-listing.html")
+            other-listing "<a href=\"2026-10-27-1800-nb-dnred-ala-AUTO-swob.xml\">x</a>"]
+        (with-redefs [xml/fetch-dd! (fn [path]
+                                      (cond
+                                        (str/includes? path "/ab-firewx/") {:status 200 :body other-listing}
+                                        (str/ends-with? path "/")          {:status 200 :body listing}
+                                        :else                              {:status 200 :body partner-xml}))]
+          (let [result (xml/fetch-station-elements! "AB-MAF_ALA" {:partner? true} {:folder "ala" :networks #{"ab-firewx" "ab_agriculture"}})]
+            (is (str/includes? (:path result) "/ab_agriculture/"))
+            (is (= "2.6" (get-in result [:elements "air_temp" :value])))))))
+
+    (testing "no file with the station's msc_id"
+      (let [other-listing "<a href=\"2026-10-27-1800-nb-dnred-ala-AUTO-swob.xml\">x</a>"]
+        (with-redefs [xml/fetch-dd! (constantly {:status 200 :body other-listing})]
+          (is (= {:status "xml=no file with the station's msc_id"}
+                 (xml/fetch-station-elements! "AB-MAF_ALA" {:partner? true} {:folder "ala" :networks #{"ab-firewx"}}))))))))
