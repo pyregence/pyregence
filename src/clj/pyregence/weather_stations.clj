@@ -102,9 +102,9 @@
   (future
     (loop []
       (let [refreshed? (refresh-source! source-id fetch!)]
-        (Thread/sleep (if refreshed?
-                        (* 1000 60 refresh-minutes)
-                        (get-retry-after-failure-ms)))
+        (Thread/sleep (long (if refreshed?
+                              (* 1000 60 refresh-minutes)
+                              (get-retry-after-failure-ms))))
         (recur)))))
 
 (defn- station->feature

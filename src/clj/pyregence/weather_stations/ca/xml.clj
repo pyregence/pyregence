@@ -17,11 +17,11 @@
 ;;
 ;; The REST station records don't say which network and folder a partner
 ;; station uses, so an index built from the directory listings maps stations
-;; to them. scratchpad/ca-xml-coverage.bb measured the rules below: they map
-;; about 93% of the partner stations, and the rest had no XML on the server.
+;; to them. The rules below map about 93% of the partner stations, and
+;; the rest had no XML on the server.
 ;; A folder name can appear in several networks (3 at most), each holding a
 ;; different station's files; partner file names contain the station's
-;; msc_id, which tells them apart. See weather_station_probing.clj.
+;; msc_id, which tells them apart.
 ;;
 ;; The server throttles bursts (about 20% timeouts with 8 concurrent
 ;; requests), so requests go one at a time, with short timeouts.
@@ -175,7 +175,7 @@
                         (or (:dirs listing)
                             (throw (ex-info (str "Listing " partners-path " failed: " (or error status)) {}))))]
     (reduce (fn [folder->networks network]
-              (Thread/sleep listing-pause-ms)
+              (Thread/sleep (long listing-pause-ms))
               (let [path                           (network-path date today network)
                     {:keys [listing status error]} (fetch-listing! path 2)]
                 (when-not listing
