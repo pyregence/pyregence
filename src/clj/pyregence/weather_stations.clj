@@ -2,23 +2,24 @@
   (:require
    [clj-http.client                          :as client]
    [pyregence.weather-stations.CA.servers    :as ca-servers]
+   [pyregence.utils                          :as u]
    [triangulum.config                        :refer [get-config]]
    [triangulum.logging                       :refer [log log-str]]))
 
 (defonce observation-stations (atom []))
 
+;;TODO consider some kind of retry logic if we get a 500
 (defn- get-US-observation-stations!
   []
   (->>
    (loop [url                  "https://api.weather.gov/stations"
           observation-stations []]
      (Thread/sleep 2000)
-     (let [{{new-observation-stations           :features
-             {next-batch-of-stations-url :next} :pagination} :body}
-           (client/get url {:as      :json
-                            :headers {"User-Agent"    "support@sig-gis.com"
-                                      "Feature-Flags" "obs_station_provider"}
-                            :connection-timeout (* 1000 60 3)})]
+     (let [{new-observation-stations           :features
+            {next-batch-of-stations-url :next} :pagination}
+           (u/url->response-body! url {:as      :json
+                                       :headers {"User-Agent"    "support@sig-gis.com"
+                                                 "Feature-Flags" "obs_station_provider"}})]
        (if (seq new-observation-stations)
          (recur next-batch-of-stations-url (concat observation-stations new-observation-stations))
          observation-stations)))
