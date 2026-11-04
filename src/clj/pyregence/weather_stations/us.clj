@@ -1,8 +1,32 @@
-(ns pyregence.weather-stations.observations.US
-  (:require
-   [clojure.string :as str]))
+(ns pyregence.weather-stations.us
+  (:require [clj-http.client    :as client]
+            [clojure.data.json  :as json]
+            [clojure.string     :as str]
+            [triangulum.logging :refer [log-str]]))
 
-(def unit-id->labels
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; US weather stations (National Weather Service)
+;; API: https://www.weather.gov/documentation/services-web-api
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(def ^:private api-url "https://api.weather.gov")
+
+;; The API asks clients to identify themselves in the User-Agent
+(def ^:private request-headers {"User-Agent" "support@sig-gis.com"})
+
+;; Bound how long a stalled upstream can hold a station list page, in ms
+(def ^:private station-list-timeouts {:connection-timeout 10000
+                                      :socket-timeout     60000})
+
+;; Bound how long a stalled upstream can hold an observation request, in ms
+(def ^:private observation-timeouts {:connection-timeout 5000
+                                     :socket-timeout     10000})
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Formatting
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(def ^:private unit-id->labels
   "A mapping of wmo-id's to labels curated from https://codes.wmo.int/common/unit in 2025"
   {"(Z)_pref" {"skos:altLabel" "(Z)", "skos:prefLabel" "(zetta)"},
    "Bq" {"skos:altLabel" "Bq", "skos:prefLabel" "becquerel"},
@@ -226,45 +250,129 @@
    "S_m-1" {"skos:altLabel" "S m^-1", "skos:prefLabel" "siemens per metre"},
    "ft" {"skos:altLabel" "ft", "skos:prefLabel" "foot"}})
 
-(defn station-id->url
-  [station-id]
-  (str "https://api.weather.gov/stations/" station-id "/observations/latest"))
+(defn- camel-case->title
+  "Turns an observation key into its display name, eg :windSpeed -> \"Wind
+  speed\", :precipitationLast3Hours -> \"Precipitation last 3 hours\"."
+  [camel-case]
+  (let [[first-word & other-words] (str/split (name camel-case) #"(?=[A-Z])")
+        title                      (str/join " " (cons (str/capitalize first-word)
+                                                       (map str/lower-case other-words)))]
+    (str/replace title #"last(\d+)" "last $1")))
 
-(defn properties->display-name->value-with-uom
+(defn- unit-code->label
+  "The label of a WMO unit code, eg \"wmoUnit:km_h-1\" -> \"km/hr\". Celsius
+  is labelled \u00B0F, because format-value converts it."
+  [unit-code]
+  (case unit-code
+    "wmoUnit:km_h-1" "km/hr"
+    "wmoUnit:degC"   "\u00B0F"
+    (some-> unit-code
+            (str/split #":")
+            last
+            unit-id->labels
+            (get "skos:altLabel"))))
+
+(defn- format-value
+  "Rounds a value to one decimal, converting Celsius to Fahrenheit first."
+  [value unit-code]
+  (let [value (if (= unit-code "wmoUnit:degC")
+                (+ (* value 1.8) 32)
+                value)]
+    (/ (Math/round (* value 10.0)) 10.0)))
+
+(defn properties->observations
+  "Maps display names to \"<value><unit>\" strings, for the properties of an
+  observation that have a numeric value, eg {\"Temperature\" \"62.6\u00B0F\"}."
   [properties]
-  (let [CamelCase->title    (fn [CamelCase]
-                              (let [[f & r] (-> CamelCase
-                                                name
-                                                (str/split #"(?=[A-Z])"))]
-                                (str/join " " (concat [(str/capitalize f)] (mapv str/lower-case r)))))
-        unitCode->wmo-label #(-> %
-                                 (str/split #":")
-                                 last
-                                 unit-id->labels
-                                 (get "skos:altLabel"))]
-    (->> properties
-         (reduce-kv
-          (fn [m k v]
-            (cond
-              (or
-               (string? v)
-               (nil? (:value v)))
-              m
+  (into {}
+        (for [[k {:keys [value unitCode] :as v}] properties
+              :when (and (map? v) (number? value))]
+          [(camel-case->title k) (str (format-value value unitCode) (unit-code->label unitCode))])))
 
-              :else
-              (let [{:keys [unitCode value]} v
-                    round-to-1-decimal #(/ (Math/round (* % 10)) 10)
-                    c->f               (fn [c] (+ (* c 1.8) 32))
-                    is-celsius?        (= unitCode "wmoUnit:degC")
-                    observation-param  (-> k
-                                           CamelCase->title
-                                           (str/replace #"last(\d+)" "last $1"))
-                    numeric-value      (when (number? value)
-                                         (if is-celsius?
-                                           (round-to-1-decimal (c->f value))
-                                           (round-to-1-decimal value)))
-                    units              (or ({"wmoUnit:km_h-1" "km/hr"
-                                             "wmoUnit:degC"   "\u00B0F"} unitCode)
-                                           (unitCode->wmo-label unitCode))]
-                (assoc m observation-param (str numeric-value units)))))
-          {}))))
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Stations
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;; CloudFire said to exclude the other providers.
+(def ^:private included-providers #{"MesoWest" "RAWS" "ASOS"})
+
+(defn- fetch-station-pages!
+  "Every station feature, following the pagination's next links. Waits 2 s
+  before each page to go easy on the API, so it takes 5-10 minutes. Throws
+  when a page can't be fetched."
+  []
+  (loop [url      (str api-url "/stations")
+         features []]
+    (Thread/sleep 2000)
+    (let [{:keys [status body]} (client/get url (merge station-list-timeouts
+                                                       {:headers          (assoc request-headers
+                                                                                 ;; Adds :provider to the station properties
+                                                                                 "Feature-Flags" "obs_station_provider")
+                                                        :throw-exceptions false}))]
+      (when (not= 200 status)
+        (throw (ex-info (str "Request for US stations failed with status " status) {:url url})))
+      (let [{page :features {next-url :next} :pagination} (json/read-str body :key-fn keyword)]
+        (if (and next-url (seq page))
+          (recur next-url (into features page))
+          (into features page))))))
+
+(defn- station-included?
+  "True for stations of the included providers."
+  [{{:keys [provider stationIdentifier]} :properties}]
+  (and (contains? included-providers provider)
+       ;; Carried over from the previous implementation; the reason for
+       ;; excluding this station is unknown.
+       (not= "0007W" stationIdentifier)))
+
+(defn api-stations->stations
+  "Maps stationIdentifier to station details, for the included stations."
+  [api-stations]
+  (into {}
+        (for [{{:keys [stationIdentifier] station-name :name} :properties
+               {[longitude latitude] :coordinates}          :geometry
+               :as api-station}                             api-stations
+              :when (and (station-included? api-station) longitude latitude)]
+          [stationIdentifier {:name      station-name
+                              :latitude  latitude
+                              :longitude longitude}])))
+
+(defn fetch-stations!
+  "Fetches the station list. Returns a map of :stations, stationIdentifier to
+  station details. Takes 5-10 minutes."
+  []
+  {:stations (api-stations->stations (fetch-station-pages!))})
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Observations
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn api-response->observation
+  "The observation in a latest-observation response, as {:station {:name :id
+  :timestamp} :observations {display-name value}}, or nil when it has none."
+  [{:keys [properties]}]
+  (when (seq properties)
+    {:station      {:name      (:stationName properties)
+                    :id        (:stationId properties)
+                    :timestamp (:timestamp properties)}
+     :observations (properties->observations properties)}))
+
+(defn fetch-observation!
+  "Fetches the latest observation of a US station, identified by its
+  stationIdentifier. Returns a map of:
+  - :observation, or nil when there's none
+  - :via, where it came from: \"rest\"
+  - :upstream-status, the status of the API request"
+  [station-id]
+  (let [url                   (str api-url "/stations/" station-id "/observations/latest")
+        {:keys [status body]} (try
+                                (client/get url (merge observation-timeouts
+                                                       {:headers          request-headers
+                                                        :throw-exceptions false}))
+                                (catch Exception e
+                                  (log-str "WARN: request for US station " station-id " observation failed: " (ex-message e))
+                                  nil))
+        observation           (when (= 200 status)
+                                (api-response->observation (json/read-str body :key-fn keyword)))]
+    {:observation     observation
+     :via             (when observation "rest")
+     :upstream-status (str "rest=" (or status "error"))}))
