@@ -1,7 +1,7 @@
 (ns pyregence.components.map-controls.weather-station-observation-latest-tool
   (:require
-   [cljs.core.async.interop                        :refer-macros [<p!]]
    [clojure.core.async                             :refer [<! go take!]]
+   [clojure.edn                                    :as edn]
    [herb.core                                      :refer [<class]]
    [pyregence.components.common                    :refer [tool-tip-wrapper]]
    [pyregence.components.help                      :as h]
@@ -13,19 +13,24 @@
    [pyregence.styles                               :as $]
    [pyregence.utils.async-utils                    :as u-async]
    [pyregence.utils.time_utils                     :as u-time]
-   [pyregence.weather-stations.observations        :as observations]
    [reagent.core                                   :as r]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Helper Functions
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn fetch!
-  [url]
-  (-> url
-      (u-async/fetch-and-process
-       {:method "get" :headers {"User-Agent" "support@sig-gis.com"}}
-       #(go (js->clj (<p! (.json %)) :keywordize-keys true)))))
+(defn- fetch-observation!
+  "Fetches the latest observation of a weather station from the backend.
+  Returns a channel with {:station {:name :id :timestamp} :observations
+  {display-name value}}, or :error when there's none."
+  [{:keys [source station-id]}]
+  (go
+    (let [{:keys [success body]} (<! (u-async/call-clj-async! "get-weather-station-observation"
+                                                               source
+                                                               station-id))]
+      (if success
+        (edn/read-string body)
+        :error))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Styles
@@ -90,7 +95,6 @@
      [:li "Station name: " name]]]])
 
 ;;TODO this could share styles with the `not-found` component
-;;TODO instead of or the "OR" arguments here we should have this function take in the US or CA data and generalize the parameters.
 (defn- info [{:keys [station observations]} reset-view zoom-weather-station]
   [:div
    [:p {:style {:font-size     "1.1rem"
@@ -181,39 +185,37 @@
                                       (go
                                         (when-let [new-weather-station (js->clj (aget features "properties")  :keywordize-keys true)]
                                           (reset! weather-station new-weather-station)
-                                          (let [observation-chan (-> new-weather-station
-                                                                     observations/weather-station-response->observation-url
-                                                                     fetch!)]
-                                            (reset! latest-observation
-                                                    (or
-                                                     (-> (<! observation-chan) observations/response->observations)
-                                                     :error))))))
+                                          (reset! latest-observation :loading)
+                                          (let [observation (<! (fetch-observation! new-weather-station))]
+                                            ;; Skip the answer when another station was clicked meanwhile
+                                            (when (= new-weather-station @weather-station)
+                                              (reset! latest-observation observation))))))
                ;; TODO, this form is sloppy.  Maybe return some value to store or convert to form 3 component.
                _                    (take! (mb/create-weather-station-layer! "weather-stations")
                                            #(mb/add-feature-highlight!
                                              "weather-stations" "weather-stations"
                                              :click-fn on-click))]
 
-    (let [{:keys [station]} @latest-observation
-          render-content                (fn []
-                                          (cond
-                                            (empty? (:features @!/the-weather-stations))
-                                            [loading-all-stations]
+    (let [render-content (fn []
+                           (cond
+                             (empty? (:features @!/the-weather-stations))
+                             [loading-all-stations]
 
-                                            (nil? @latest-observation)
-                                            [intro]
+                             (nil? @latest-observation)
+                             [intro]
 
-                                            (:id station)
-                                            [info
-                                             @latest-observation
-                                             reset-view
-                                             zoom-weather-station]
+                             (= @latest-observation :loading)
+                             [loading-one-station (:name @weather-station)]
 
-                                            (= @latest-observation :error)
-                                            [not-found (observations/weather-station->cmpt-info @weather-station)]
+                             (= @latest-observation :error)
+                             [not-found {:name (:name @weather-station)
+                                         :id   (:station-id @weather-station)}]
 
-                                            :else
-                                            [loading-one-station (:name station)]))]
+                             :else
+                             [info
+                              @latest-observation
+                              reset-view
+                              zoom-weather-station]))]
 
       (if @!/mobile?
         [:div#wildfire-mobile-weather-station-tool

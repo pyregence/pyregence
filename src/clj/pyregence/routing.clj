@@ -158,6 +158,9 @@
    [:post "/clj/get-weather-stations"]               {:handler (clj-handler weather-stations/get-weather-stations)
                                                      :auth-type   #{:member :token}
                                                      :auth-action :block}
+   [:post "/clj/get-weather-station-observation"]    {:handler (clj-handler weather-stations/get-weather-station-observation)
+                                                     :auth-type   #{:member :token}
+                                                     :auth-action :block}
 
    [:post "/clj/get-current-image"]                  {:handler (clj-handler cameras/get-current-image)
                                                      :auth-type :token
