@@ -71,7 +71,7 @@
                                :long        long})))
                     [])
                ;; prefer minute
-                   (group-by :url)
+                   (group-by :msc_id)
                    (reduce-kv (fn [l _ ids] (conj l (->> ids (sort-by :url) first))) [])
                ;; follow spec client expects
                    (map (fn [{:keys [lat long url msc_id]}]
