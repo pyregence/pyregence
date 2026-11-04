@@ -32,6 +32,25 @@
   (def rest-success-msc (->> rest-server-observations-success (map #(-> % :features first :properties :msc_id-value)) set))
   (count (set/difference xml-msc rest-success-msc)) ;; => 597 stations more by reading the xml files then if we use the rest system
 
+  (require '[clojure.data.csv :as csv]
+           '[semantic-csv.core :as sc]
+           '[clojure.string :as str])
 
+  (defn read-csv
+    [url]
+    (->> url  slurp csv/read-csv (sc/mappify {:transform-header (fn [h] (-> h str/lower-case (str/replace "# " "") (str/replace "_" "-") (str/replace " " "-") keyword))})))
+
+  (def pc (read-csv "https://dd.weather.gc.ca/today/observations/doc/swob-xml_partner_station_list.csv"))
+  ;; partner counts
+  ;; csv
+  (-> pc count)
+   ;; => 1996
+
+  ;; mine
+  (def partner-stations (x/get-partner-stations))
+  (count partner-stations)
+  ;; => 1653
+
+  ;; noel 1755
   ;;
   )

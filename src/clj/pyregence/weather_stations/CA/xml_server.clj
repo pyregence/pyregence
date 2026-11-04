@@ -39,6 +39,39 @@
      xml)
     @m))
 
+(defn get-partner-stations
+  []
+  (->>
+   (let [url->urls #(some->> % url->response-body! html-str->hrefs)]
+     (->> (url->urls ca-partner-url)
+          (pmap (fn [network]
+                  (let [network-url (str ca-partner-url network)]
+                    (->> (url->urls network-url)
+                         (pmap (fn [date]
+                                 (let [date-url (str network-url "/" date)]
+                                   (->> (url->urls date-url)
+                                        (pmap (fn [stn_id]
+                                                (let [xml-files-url     (str date-url "/" stn_id)
+                                                      xml-file-url      (first (url->urls xml-files-url))
+                                                      full-xml-file-url (str xml-files-url "/" xml-file-url)
+                                                      {:keys [msc_id lat long stn_id] :as r}
+                                                      (some->> xml-file-url
+                                                               (str xml-files-url "/")
+                                                               url->response-body!
+                                                               xml-str->safe-parse-str
+                                                               xml->obs-k->val&uom)]
+                                                  (when r
+                                                    {:geometry {:coordinates [long lat]
+                                                                :type "Point"}
+                                                     :properties
+                                                     {:msc_id    (:value msc_id)
+                                                      :network   network
+                                                      :stn_id    (:value stn_id)
+                                                      :latitude  (:value lat)
+                                                      :longitude (:value long)}}))))))))))))))
+   flatten
+   (remove nil?)))
+
 (defn get-observation-stations!
   []
   (let [non-partner-xml-stations
@@ -71,7 +104,7 @@
                                :long        long})))
                     [])
                ;; prefer minute
-                   (group-by :url)
+                   (group-by :msc_id)
                    (reduce-kv (fn [l _ ids] (conj l (->> ids (sort-by :url) first))) [])
                ;; follow spec client expects
                    (map (fn [{:keys [lat long url msc_id]}]
@@ -81,13 +114,13 @@
         (->>
          (let [url->urls #(some->> % url->response-body! html-str->hrefs)]
            (->> (url->urls ca-partner-url)
-                (map (fn [network]
+                (pmap (fn [network]
                         (let [network-url (str ca-partner-url network)]
                           (->> (url->urls network-url)
-                               (map (fn [date]
+                               (pmap (fn [date]
                                        (let [date-url (str network-url "/" date)]
                                          (->> (url->urls date-url)
-                                              (map (fn [stn_id]
+                                              (pmap (fn [stn_id]
                                                       (let [xml-files-url     (str date-url "/" stn_id)
                                                             xml-file-url      (first (url->urls xml-files-url))
                                                             full-xml-file-url (str xml-files-url "/" xml-file-url)
@@ -116,10 +149,10 @@
         url->val&uom
         (fn [url]
           (some->> url
-                  verify-url
-                  url->response-body!
-                  xml-str->safe-parse-str
-                  xml->obs-k->val&uom))
+                   verify-url
+                   url->response-body!
+                   xml-str->safe-parse-str
+                   xml->obs-k->val&uom))
         observations
         (if url
           (url->val&uom url)
