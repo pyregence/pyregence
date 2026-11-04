@@ -43,14 +43,12 @@
   (def pc (read-csv "https://dd.weather.gc.ca/today/observations/doc/swob-xml_partner_station_list.csv"))
   ;; partner counts
   ;; csv
-  (-> pc count)
-   ;; => 1996
+  (-> pc count) ;;=> 1996
 
   ;; mine
   (def partner-stations (x/get-partner-stations))
-  (count partner-stations)
-  ;; => 1653
+  (count partner-stations) ;; => 1653
 
-  ;; noel 1755
+  ;; noel 1558
   ;;
   )
