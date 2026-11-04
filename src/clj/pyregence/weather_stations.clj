@@ -23,15 +23,36 @@
 ;; Config
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+;; Used for the keys config.edn leaves out
+(def ^:private default-sources
+  {:us {:points-refresh-minutes  1440 ;; once a day
+        :observation-ttl-seconds 300}
+   :ca {:points-refresh-minutes    1440
+        :observation-ttl-seconds   300
+        :xml-index-refresh-minutes 1440}})
+
+(def ^:private default-retry-after-failure-minutes 10)
+
+;; Read on first use, not when the namespace loads: loading happens at build
+;; time too (AOT), where there may be no config.edn. Config doesn't change at
+;; runtime, so reading it once is enough.
+(def ^:private config
+  (delay
+    {;; merge-with merge, so a source that sets only some keys keeps the
+     ;; defaults of the others
+     :sources                     (merge-with merge default-sources (get-config ::sources))
+     :retry-after-failure-minutes (or (get-config ::retry-after-failure-minutes)
+                                      default-retry-after-failure-minutes)}))
+
 (defn- get-source-config
   "The config map of a source (:us or :ca)."
   [source-id]
-  (get (get-config ::sources) source-id))
+  (get-in @config [:sources source-id]))
 
 (defn- get-retry-after-failure-ms
   "How long a refresh loop waits after a failed refresh, instead of its full interval."
   []
-  (* 1000 60 (get-config ::retry-after-failure-minutes)))
+  (* 1000 60 (:retry-after-failure-minutes @config)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Source cache
