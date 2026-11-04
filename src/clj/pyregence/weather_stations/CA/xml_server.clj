@@ -81,7 +81,8 @@
                   (walk/postwalk
                    (fn [x]
                      (when (and (map? x) (= :element (:tag x)))
-                       (swap! m assoc (-> x :attrs :name keyword) (:attrs x))))
+                       (swap! m assoc (-> x :attrs :name keyword) (:attrs x))
+                       x))
                    xml)
                   @m))]
           (some->> ca-non-partner-url
