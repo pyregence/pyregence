@@ -27,6 +27,7 @@
            ring/ring-ssl                                    {:mvn/version "0.3.0"}
            seancorfield/next.jdbc                           {:mvn/version "1.1.569"}
            semantic-csv/semantic-csv                        {:mvn/version "0.2.1-alpha1"}
+           com.brunobonacci/safely                          {:mvn/version "1.0.0"}
            sig-gis/triangulum                               {:git/url "https://github.com/sig-gis/triangulum"
                                                              :git/sha "e605d0820c2550d94e02cccf79d3c275a83ec60e"}}
  :aliases {:build-db         {:main-opts ["-m" "triangulum.build-db"]}
