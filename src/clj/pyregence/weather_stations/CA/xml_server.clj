@@ -107,9 +107,9 @@
                    (group-by :msc_id)
                    (reduce-kv (fn [l _ ids] (conj l (->> ids (sort-by :url) first))) [])
                ;; follow spec client expects
-                   (map (fn [{:keys [lat long url msc_id]}]
-                          {:geometry {:coordinates [long lat] :type "Point"}
-                           :properties {:msc_id msc_id :url url :latitude lat :longitude long}}))))
+                   (mapv (fn [{:keys [lat long url msc_id]}]
+                           {:geometry {:coordinates [long lat] :type "Point"}
+                            :properties {:msc_id msc_id :url url :latitude lat :longitude long}}))))
         partner-xml-stations
         (->>
          (let [url->urls #(some->> % url->response-body! html-str->hrefs)]
@@ -140,8 +140,9 @@
                                                             :latitude  (:value lat)
                                                             :longitude (:value long)}}))))))))))))))
          flatten
-         (remove nil?))]
-    (concat partner-xml-stations non-partner-xml-stations)))
+         (remove nil?)
+         vec)]
+    (vec (concat partner-xml-stations non-partner-xml-stations))))
 
 (defn get-observations
   [_ {:keys [network stn_id url]}]
