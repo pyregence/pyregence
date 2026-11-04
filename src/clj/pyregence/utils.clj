@@ -102,36 +102,37 @@
   ([url]
    (url->response-body! url {}))
   ([url config]
-   (some->
-    (safely
-     (client/get
-      url
-      (merge
-       {:throw-exceptions   false
-        :connection-timeout 8000
-        :socket-timeout     30000
-        :retry-handler     (fn [_ _ _] false)}
-       config))
+   (when url
+     (some->
+      (safely
+       (client/get
+        url
+        (merge
+         {:throw-exceptions   false
+          :connection-timeout 8000
+          :socket-timeout     30000
+          :retry-handler     (fn [_ _ _] false)}
+         config))
 
-     :on-error
-     :max-retries 3
+       :on-error
+       :max-retries 3
 
-     :retry-delay
-     [:random-exp-backoff
-      :base 1000
-      :+/- 0.30
-      :max 15000]
+       :retry-delay
+       [:random-exp-backoff
+        :base 1000
+        :+/- 0.30
+        :max 15000]
 
-     :retryable-error?
-     #(instance? java.io.IOException %)
+       :retryable-error?
+       #(instance? java.io.IOException %)
 
-     :failed?
-     #(contains? #{429 500 502 503 504} (:status %))
+       :failed?
+       #(contains? #{429 500 502 503 504} (:status %))
 
-     :default nil)
-    ((fn [{:keys [status body]}]
-       (when (= status 200)
-         body))))))
+       :default nil)
+      ((fn [{:keys [status body]}]
+         (when (= status 200)
+           body)))))))
 
 (defn xml-str->safe-parse-str
   [xml-str]
