@@ -91,7 +91,8 @@
                 auto-accept?
                 unsaved-auto-accept?
                 unsaved-auto-add?
-                unsaved-org-name-support-message]
+                unsaved-org-name-support-message
+                number-of-customers]
          :as   org}
         (get-org user-role selected-log org-uuid->org)]
     [:<>
@@ -102,8 +103,15 @@
         :value     unsaved-org-name}
         unsaved-org-name-support-message
         (assoc :support-message unsaved-org-name-support-message))]
+     [input-labeled
+      {:label     "Number of Customers"
+       :type      "number"
+       :min       0
+       :on-change #(swap! org-uuid->org assoc-in [org-uuid :number-of-customers] (.-value (.-target %)))
+       :value     number-of-customers}]
      [checkbox unsaved-auto-accept? #(swap! org-uuid->org update-in [org-uuid :unsaved-auto-accept?] not) "Auto Accept User as Organization Member"]
      [checkbox unsaved-auto-add? #(swap! org-uuid->org update-in [org-uuid :unsaved-auto-add?] not)  "Auto Add User as Organization Member"]
+
      [email-domains-cmpt (assoc org :org-uuid->org org-uuid->org)]
      [:div {:style {:display        "flex"
                     :flex-direction "row"
