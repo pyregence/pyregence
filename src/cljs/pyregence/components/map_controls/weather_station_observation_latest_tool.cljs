@@ -183,17 +183,17 @@
                                       (go
                                         (when-let [new-weather-station (js->clj (aget features "properties")  :keywordize-keys true)]
                                           (reset! weather-station new-weather-station)
-                                          (let [{:keys [network stn_id]} @weather-station
+                                          (let [{:keys [network stn_id]} new-weather-station
                                                 {:keys [numberReturned] :as response}
-                                                (-> @weather-station
+                                                (-> new-weather-station
                                                     observations/weather-station-response->observation-url
                                                     fetch!
                                                     <!)]
                                             (reset! latest-observation
                                                     (if (and (zero? numberReturned) (or network stn_id))
-                                                      (let [{:keys [name_en msc_id]} @weather-station
+                                                      (let [{:keys [name_en msc_id]} new-weather-station
                                                             {:keys [body status]}
-                                                            (<! (u-async/call-clj-async! "get-observations-from-ca-xml-server" @weather-station))]
+                                                            (<! (u-async/call-clj-async! "get-observations-from-ca-xml-server" new-weather-station))]
                                                         (if (not= 200 status)
                                                           :error
                                                           (let [all-observations (some-> body edn/read-string)
