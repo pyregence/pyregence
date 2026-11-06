@@ -1005,7 +1005,6 @@
                 :archived?             archived
                 :created-date          created_date
                 :archived-date         archived_date
-                ;;TODO replace with real number
                 :number-of-customers   number_of_customers}))
        (data-response)))
 
@@ -1061,7 +1060,6 @@
                   :email-domains         email_domains
                   :auto-add?             auto_add
                   :auto-accept?          auto_accept
-                  ;;TODO replace with real value
                   :number-of-customers   number_of_customers}))
          (data-response))
     (data-response "No user is logged in." {:status 403})))
@@ -1147,10 +1145,10 @@
        (mapv #(:org_unique_id %))
        (data-response)))
 
-(defn update-org-info [{:keys [user-id]} org-uuid org-name email-domains auto-add? auto-accept?]
+(defn update-org-info [{:keys [user-id]} org-uuid org-name email-domains auto-add? auto-accept? number-of-customers]
   (let [org-id (org-uuid->id org-uuid)]
     (if (can-admin-org? user-id org-id)
-      (do (call-sql "update_org_info" org-id org-name email-domains auto-add? auto-accept?)
+      (do (call-sql "update_org_info" org-id org-name email-domains auto-add? auto-accept? number-of-customers)
           (data-response ""))
       (data-response "You are not authorized to manage this organization." {:status 403}))))
 
@@ -1183,9 +1181,9 @@
   ;; org (here a non-existent uuid) yields a uniform 403 without revealing existence,
   ;; and a malformed (non-uuid) id is rejected the same way -- no 500 and no mutation,
   ;; even for an account_manager, whom the SQL alone would let through.
-  (update-org-info {:user-id 1} "00000000-0000-0000-0000-000000000000" "Hacked" "@hack.com" false false)
+  (update-org-info {:user-id 1} "00000000-0000-0000-0000-000000000000" "Hacked" "@hack.com" false false 0)
   ;=>> {:status 403}
 
-  (update-org-info {:user-id 3} "not-a-uuid" "Hacked" "@hack.com" false false)
+  (update-org-info {:user-id 3} "not-a-uuid" "Hacked" "@hack.com" false false 0)
   ;=>> {:status 403}
   )

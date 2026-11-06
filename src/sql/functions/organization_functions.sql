@@ -138,18 +138,20 @@ RETURNS TABLE (org_unique_id text) AS $$
 $$ LANGUAGE SQL;
 
 CREATE OR REPLACE FUNCTION update_org_info(
-    _org_id           integer,
-    _org_name         text,
-    _email_domains    text,
-    _auto_add         boolean,
-    _auto_accept      boolean
+    _org_id              integer,
+    _org_name            text,
+    _email_domains       text,
+    _auto_add            boolean,
+    _auto_accept         boolean,
+    _number_of_customers integer
  ) RETURNS void AS $$
 
     UPDATE organizations
     SET org_name = _org_name,
         email_domains = _email_domains,
         auto_add = _auto_add,
-        auto_accept = _auto_accept
+        auto_accept = _auto_accept,
+        number_of_customers = _number_of_customers
     WHERE
         organization_uid = _org_id
 

@@ -36,7 +36,7 @@
    (fn [org-uuid->org {:keys [org-uuid org-name email-domains auto-accept? auto-add? number-of-customers] :as org}]
      (assoc org-uuid->org org-uuid
             (assoc org
-                   :number-of-customers  number-of-customers
+                   :unsaved-number-of-customers  number-of-customers
                    :unsaved-auto-accept? auto-accept?
                    :unsaved-auto-add?    auto-add?
                    :unsaved-org-name     org-name
