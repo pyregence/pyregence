@@ -125,9 +125,7 @@
 
 (defn get-observations
   [_ {:keys [network stn_id url]}]
-  (let [verify-url #(when (or
-                           (str/starts-with? % ca-partner-url)
-                           (str/starts-with? % ca-non-partner-url)) %)
+  (let [verify-url #(when (str/starts-with? % ca-non-partner-url) %)
         url->val&uom
         (fn [url]
           (some->> url
@@ -137,7 +135,7 @@
                    xml->obs-k->val&uom))
         observations
         (if url
-          (url->val&uom url)
+          (-> url verify-url url->val&uom url)
           (let [partial-partner-url
                 (str
                  ca-partner-url
