@@ -49,6 +49,11 @@
       message      [message]
       :else        nil)))
 
+(defn second-factor-url
+  "The code page a reply sends the browser to, or nil when no second factor is owed."
+  [body]
+  (:second-factor-url (response-data body)))
+
 (defn filter-no-data
   "Removes any nodata 'label' entries from the provided legend-list."
   [legend-list]

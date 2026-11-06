@@ -27,13 +27,10 @@
 
 (defn- log-in! []
   (go
-    (let [{:keys [success status body]} (<! (u-async/call-clj-async! "log-in" @email @password))
-          {:keys [require-2fa email method]} (u-data/response-data body)]
+    (let [{:keys [success status body]} (<! (u-async/call-clj-async! "log-in" @email @password))]
       (if success
-        (if require-2fa
-            ;; 2FA is required, redirect to 2FA verification page
-          (u-browser/jump-to-url! (str "/verify-2fa?email=" email "&method=" method))
-            ;; Normal login success
+        (if-let [second-factor-url (u-data/second-factor-url body)]
+          (u-browser/jump-to-url! second-factor-url)
           (let [url (:redirect-from (u-browser/get-session-storage) "/forecast")]
             (u-browser/clear-session-storage!)
             (u-browser/jump-to-url! url)

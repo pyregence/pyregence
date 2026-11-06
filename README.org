@@ -34,8 +34,10 @@ Please note that you must replace all values surrounded with angle
 brackets (e.g., "<api-key>") with actual values for the application to
 work correctly. The Mapbox ~:access-token~ field requires a
 [[https://docs.mapbox.com/help/getting-started/access-tokens/][Mapbox access token]].
-The ~:wildfire-camera-api-key~ field requires an API key for the
-[[https://www.alertwildfire.org/][AlertWildfire]] API. You should change the
+The ~:alert-west-api-key~ field requires an API key for the
+[[https://www.alertwest.org/][ALERTWest]] API. The ~:faa-proxy-url~ field
+points at the nginx proxy for [[https://weathercams.faa.gov/][FAA WeatherCams]],
+which holds the FAA API token; omit it to disable FAA cameras. You should change the
 ~:pyr-auth-token~ field to a unique string that's at least 16 characters long.
 
 ** PostgreSQL Database Setup
