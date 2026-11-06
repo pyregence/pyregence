@@ -1,14 +1,15 @@
 (ns pyregence.routing
-  (:require [pyregence.authentication   :as authentication]
-            [pyregence.cameras          :as cameras]
-            [pyregence.capabilities     :as capabilities]
-            [pyregence.email            :as email]
-            [pyregence.handlers         :refer [clj-handler render-page]]
-            [pyregence.marketplace      :as marketplace]
-            [pyregence.match-drop       :as match-drop]
-            [pyregence.red-flag         :as red-flag]
-            [pyregence.session          :as session]
-            [pyregence.weather-stations :as weather-stations]))
+  (:require [pyregence.authentication                 :as authentication]
+            [pyregence.cameras                        :as cameras]
+            [pyregence.capabilities                   :as capabilities]
+            [pyregence.email                          :as email]
+            [pyregence.handlers                       :refer [clj-handler render-page]]
+            [pyregence.marketplace                    :as marketplace]
+            [pyregence.match-drop                     :as match-drop]
+            [pyregence.red-flag                       :as red-flag]
+            [pyregence.session                        :as session]
+            [pyregence.weather-stations               :as weather-stations]
+            [pyregence.weather-stations.CA.xml-server :as ca-xml-server]))
 
 (def routes
   {;; Page Routes
@@ -137,6 +138,9 @@
    [:post "/clj/get-current-user-organization"]      {:handler (clj-handler authentication/get-current-user-organization)
                                                      :auth-type #{:member :token}
                                                      :auth-action :block}
+   [:post "/clj/get-observations-from-ca-xml-server"] {:handler (clj-handler ca-xml-server/get-observations)
+                                                       :auth-type #{:token :member}
+                                                       :auth-action :block}
    [:post "/clj/get-org-member-users"]               {:handler (clj-handler authentication/get-org-member-users)
                                                      :auth-type #{:organization-admin :tier2-pro :token}
                                                      :auth-action :block}

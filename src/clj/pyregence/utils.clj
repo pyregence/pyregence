@@ -1,9 +1,15 @@
 (ns pyregence.utils
-  (:import  [java.util TimeZone]
-            [java.text SimpleDateFormat]
-            [java.time LocalDateTime ZonedDateTime ZoneOffset]
-            [java.time.format DateTimeFormatter]
-            [java.time.temporal ChronoUnit]))
+  (:require
+   [clj-http.client  :as client]
+   [clojure.data.xml :as xml]
+   [safely.core      :refer [safely]]
+   [clojure.walk     :as walk])
+  (:import
+   [java.text SimpleDateFormat]
+   [java.time LocalDateTime ZonedDateTime ZoneOffset]
+   [java.time.format DateTimeFormatter]
+   [java.time.temporal ChronoUnit]
+   [java.util TimeZone]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Utility Functions
@@ -91,3 +97,46 @@
                              (.truncatedTo ChronoUnit/HOURS))]
     (.format (DateTimeFormatter/ofPattern "yyyy-MM-dd'T'HH:mm'Z'")
              rounded-datetime)))
+
+(defn url->response-body!
+  ([url]
+   (url->response-body! url {}))
+  ([url config]
+   (when url
+     (some->
+      (safely
+       (client/get
+        url
+        (merge
+         {:throw-exceptions   false
+          :connection-timeout 8000
+          :socket-timeout     30000
+          :retry-handler     (fn [_ _ _] false)}
+         config))
+
+       :on-error
+       :max-retries 3
+
+       :retry-delay
+       [:random-exp-backoff
+        :base 1000
+        :+/- 0.30
+        :max 15000]
+
+       :retryable-error?
+       #(instance? java.io.IOException %)
+
+       :failed?
+       #(contains? #{429 500 502 503 504} (:status %))
+
+       :default nil)
+      ((fn [{:keys [status body]}]
+         (when (= status 200)
+           body)))))))
+
+(defn xml-str->safe-parse-str
+  [xml-str]
+  (try
+    (walk/postwalk identity (xml/parse-str xml-str))
+    (catch Exception _
+      nil)))
