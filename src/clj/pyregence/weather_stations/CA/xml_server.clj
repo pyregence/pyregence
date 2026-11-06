@@ -39,117 +39,95 @@
      xml)
     @m))
 
-(defn get-partner-stations
+(defn- get-partner-stations!
   []
-  (->>
-   (let [url->urls #(some->> % url->response-body! html-str->hrefs)]
-     (->> (url->urls ca-partner-url)
-          (pmap (fn [network]
-                  (let [network-url (str ca-partner-url network)]
-                    (->> (url->urls network-url)
-                         (pmap (fn [date]
-                                 (let [date-url (str network-url "/" date)]
-                                   (->> (url->urls date-url)
-                                        (pmap (fn [stn_id]
-                                                (let [xml-files-url     (str date-url "/" stn_id)
-                                                      xml-file-url      (first (url->urls xml-files-url))
-                                                      full-xml-file-url (str xml-files-url "/" xml-file-url)
-                                                      {:keys [msc_id lat long stn_id] :as r}
-                                                      (some->> xml-file-url
-                                                               (str xml-files-url "/")
-                                                               url->response-body!
-                                                               xml-str->safe-parse-str
-                                                               xml->obs-k->val&uom)]
-                                                  (when r
-                                                    {:geometry {:coordinates [long lat]
-                                                                :type "Point"}
-                                                     :properties
-                                                     {:msc_id    (:value msc_id)
-                                                      :network   network
-                                                      :stn_id    (:value stn_id)
-                                                      :latitude  (:value lat)
-                                                      :longitude (:value long)}}))))))))))))))
-   flatten
-   (remove nil?)))
+  (letfn [(url->urls [url]
+            (some-> (url->response-body! url)
+                    html-str->hrefs))
+
+          (fetch-station [[network date station]]
+            (let [network-url (str ca-partner-url network)
+                  station-url (str network-url "/" date "/" station)
+                  xml-file (->> (url->urls station-url)
+                                (filter #(str/ends-with? % ".xml"))
+                                sort
+                                last)]
+              (when xml-file
+                (when-let [{:keys [msc_id lat long stn_id]}
+                           (some-> (str station-url "/" xml-file)
+                                   url->response-body!
+                                   xml-str->safe-parse-str
+                                   xml->obs-k->val&uom)]
+                  {:geometry {:coordinates [(:value long)
+                                            (:value lat)]
+                              :type "Point"}
+                   :properties
+                   {:msc_id    (:value msc_id)
+                    :network   network
+                    :stn_id    (:value stn_id)
+                    :latitude  (:value lat)
+                    :longitude (:value long)}}))))]
+    (let [station-tasks
+          (for [network (url->urls ca-partner-url)
+                :let [network-url (str ca-partner-url network)]
+                date (url->urls network-url)
+                :let [date-url (str network-url "/" date)]
+                station (url->urls date-url)]
+            [network date station])]
+      (->> station-tasks
+           (partition-all 3)
+           (mapcat #(doall (pmap fetch-station %)))
+           (remove nil?)
+           vec))))
+
+(defn get-non-partner-stations!
+  []
+  (let [xml->obs-name->obs
+        (fn [xml]
+          (let [m (atom {})]
+            (walk/postwalk
+             (fn [x]
+               (when (and (map? x) (= :element (:tag x)))
+                 (swap! m assoc (-> x :attrs :name keyword) (:attrs x))
+                 x))
+             xml)
+            @m))]
+    (some->> ca-non-partner-url
+             url->response-body!
+             html-str->hrefs
+             (reduce
+              (fn [l id]
+                (conj l
+                      (let [url  (str ca-non-partner-url id)
+                            {{msc-id :value} :msc_id
+                             {lat :value} :lat
+                             {long :value} :long}
+                            (some-> url
+                                    url->response-body!
+                                    xml-str->safe-parse-str
+                                    xml->obs-name->obs)]
+                        {:msc_id      msc-id
+                         :url         url
+                         :lat         lat
+                         :long        long})))
+              [])
+               ;; prefer minute
+             (group-by :msc_id)
+             (reduce-kv (fn [l _ ids] (conj l (->> ids (sort-by :url) first))) [])
+               ;; follow spec client expects
+             (mapv (fn [{:keys [lat long url msc_id]}]
+                     {:geometry {:coordinates [long lat] :type "Point"}
+                      :properties {:msc_id msc_id :url url :latitude lat :longitude long}})))))
 
 (defn get-observation-stations!
   []
-  (let [non-partner-xml-stations
-        (let [xml->obs-name->obs
-              (fn [xml]
-                (let [m (atom {})]
-                  (walk/postwalk
-                   (fn [x]
-                     (when (and (map? x) (= :element (:tag x)))
-                       (swap! m assoc (-> x :attrs :name keyword) (:attrs x))
-                       x))
-                   xml)
-                  @m))]
-          (some->> ca-non-partner-url
-                   url->response-body!
-                   html-str->hrefs
-                   (reduce
-                    (fn [l id]
-                      (conj l
-                            (let [url  (str ca-non-partner-url id)
-                                  {{msc-id :value} :msc_id
-                                   {lat :value} :lat
-                                   {long :value} :long}
-                                  (some-> url
-                                          url->response-body!
-                                          xml-str->safe-parse-str
-                                          xml->obs-name->obs)]
-                              {:msc_id      msc-id
-                               :url         url
-                               :lat         lat
-                               :long        long})))
-                    [])
-               ;; prefer minute
-                   (group-by :msc_id)
-                   (reduce-kv (fn [l _ ids] (conj l (->> ids (sort-by :url) first))) [])
-               ;; follow spec client expects
-                   (mapv (fn [{:keys [lat long url msc_id]}]
-                           {:geometry {:coordinates [long lat] :type "Point"}
-                            :properties {:msc_id msc_id :url url :latitude lat :longitude long}}))))
-        partner-xml-stations
-        (->>
-         (let [url->urls #(some->> % url->response-body! html-str->hrefs)]
-           (->> (url->urls ca-partner-url)
-                (pmap (fn [network]
-                        (let [network-url (str ca-partner-url network)]
-                          (->> (url->urls network-url)
-                               (pmap (fn [date]
-                                       (let [date-url (str network-url "/" date)]
-                                         (->> (url->urls date-url)
-                                              (pmap (fn [stn_id]
-                                                      (let [xml-files-url     (str date-url "/" stn_id)
-                                                            xml-file-url      (first (url->urls xml-files-url))
-                                                            full-xml-file-url (str xml-files-url "/" xml-file-url)
-                                                            {:keys [msc_id lat long stn_id] :as r}
-                                                            (some->> xml-file-url
-                                                                     (str xml-files-url "/")
-                                                                     url->response-body!
-                                                                     xml-str->safe-parse-str
-                                                                     xml->obs-k->val&uom)]
-                                                        (when r
-                                                          {:geometry {:coordinates [long lat]
-                                                                      :type "Point"}
-                                                           :properties
-                                                           {:msc_id    (:value msc_id)
-                                                            :network   network
-                                                            :stn_id    (:value stn_id)
-                                                            :latitude  (:value lat)
-                                                            :longitude (:value long)}}))))))))))))))
-         flatten
-         (remove nil?)
-         vec)]
-    (vec (concat partner-xml-stations non-partner-xml-stations))))
+  (vec (concat (get-partner-stations!) (get-non-partner-stations!))))
 
 (defn get-observations
   [_ {:keys [network stn_id url]}]
   (let [verify-url #(when (or
-                            (str/starts-with? % ca-partner-url)
-                            (str/starts-with? % ca-non-partner-url)) %)
+                           (str/starts-with? % ca-partner-url)
+                           (str/starts-with? % ca-non-partner-url)) %)
         url->val&uom
         (fn [url]
           (some->> url
