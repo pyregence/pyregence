@@ -129,7 +129,6 @@
         url->val&uom
         (fn [url]
           (some->> url
-                   verify-url
                    url->response-body!
                    xml-str->safe-parse-str
                    xml->obs-k->val&uom))
