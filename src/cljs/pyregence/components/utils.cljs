@@ -67,10 +67,11 @@
    (when icon [icon :height "16px" :width "16px"])])
 
 (defn input-field
-  [{:keys [value on-change style support-message placeholder type] :or {type "text"}}]
+  [{:keys [value on-change style support-message placeholder type min] :or {type "text"}}]
   [:div {:style {:display        "flex"
                  :flex-direction "column"}}
    [:input {:type      type
+            :min       min
             :class     (<class $standard-input-field)
             :style     (merge {:font-weight   "500"
                                :width         "100%"
