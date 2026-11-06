@@ -80,7 +80,7 @@
            (remove nil?)
            vec))))
 
-(defn get-non-partner-stations!
+(defn- get-non-partner-stations!
   []
   (let [xml->obs-name->obs
         (fn [xml]
