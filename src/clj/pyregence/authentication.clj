@@ -302,14 +302,6 @@
 (defn- same-email? [a b]
   (boolean (and a b (= (normalize-email a) (normalize-email b)))))
 
-(defn- mailed-reset
-  "The user this session mailed a code to for this reset link, marked :sent?, or nil. The code
-   replaced the link's token, so from then on the session vouches for the link."
-  [session email token now]
-  (let [{:keys [reset-token user-email] :as pending} (session/pending-reset session now)]
-    (when (and (= token reset-token) (same-email? email user-email))
-      (-> pending (select-keys [:user-id :user-email]) (assoc :sent? true)))))
-
 (defn- link-user
   "The user an emailed link names, while its token is valid."
   [email token]
@@ -317,10 +309,10 @@
              (first (call-sql "get_user_by_link_token" {:log? false} email token))]
     {:user-id user_id :user-email user_email}))
 
-(defn- reset-user
-  "Who a reset step for `email` and `token` acts for, or nil when the link is not valid."
-  [session email token now]
-  (or (mailed-reset session email token now) (link-user email token)))
+(defn- code-pending?
+  "Whether a mailed code is waiting for `user-id`, so the page can show its entry box again."
+  [user-id]
+  (sql-primitive (call-sql "emailed_code_pending" user-id)))
 
 (defn- clearance
   "What this session's passed second factor allows for a reset of `email`'s password, or nil once
@@ -334,39 +326,36 @@
   "Says what a reset link needs next: the code step for an account with a second factor, or the form.
    It changes nothing and mails nothing, since mail scanners open links too."
   [session email token]
-  (let [now                              (clock/now)
-        {:keys [user-id sent?] :as user} (reset-user session email token now)]
+  (let [{:keys [user-id] :as user} (link-user email token)]
     (cond
-      (clearance session email now) (data-response {:step :form})
-      (nil? user)                   (invalid-reset-link)
-      :else                         (if-let [method (owed-second-factor user-id)]
-                                      (data-response {:step :code :method method :sent? (boolean sent?)})
-                                      (data-response {:step :form})))))
+      (clearance session email (clock/now)) (data-response {:step :form})
+      (nil? user)                           (invalid-reset-link)
+      :else                                 (if-let [method (owed-second-factor user-id)]
+                                              (data-response {:step   :code
+                                                              :method method
+                                                              :sent?  (and (= :email method) (code-pending? user-id))})
+                                              (data-response {:step :form})))))
 
 (defn send-reset-code
   "Mails an emailed-code account the code for this reset, when the user asks for it."
-  [session email token]
-  (let [now                                   (clock/now)
-        {:keys [user-id user-email] :as user} (reset-user session email token now)]
+  [_ email token]
+  (let [{:keys [user-id user-email] :as user} (link-user email token)]
     (if (and user (= :email (owed-second-factor user-id)))
       (let [sent? (mail-code! user-email)]
-        ;; Kept either way: a failed send may still have replaced the link's token.
-        (data-response {:sent? sent?} (cond-> {:session (session/awaiting-reset-code session user token now)}
-                                        (not sent?) (assoc :status 502))))
+        (data-response {:sent? sent?} {:status (if sent? 200 502)}))
       (invalid-reset-link))))
 
 (defn verify-reset-code
   "Checks the second factor for a reset. When it holds up, this session may set the new password once,
    while the password is still the one the code was entered against."
   [session email token code]
-  (let [now (clock/now)]
-    (if-let [{:keys [user-id] :as user} (reset-user session email token now)]
-      (let [password-set-ms (last-password-set-ms user-id)]
-        (check-code user code
-                    (fn [_]
-                      (data-response {:step :form}
-                                     {:session (session/cleared-for-reset session user password-set-ms now)}))))
-      (invalid-reset-link))))
+  (if-let [{:keys [user-id] :as user} (link-user email token)]
+    (let [password-set-ms (last-password-set-ms user-id)]
+      (check-code user code
+                  (fn [_]
+                    (data-response {:step :form}
+                                   {:session (session/cleared-for-reset session user password-set-ms (clock/now))}))))
+    (invalid-reset-link)))
 
 (defn- log-in-after-reset
   "Logs in the user whose new password `rows` show saved, or refuses the link when none was."
@@ -432,7 +421,8 @@
         (call-sql "update_user_settings" user-id original))))
   ;=> ["{:step :code, :method :totp, :sent? false}" 403 true 200 true 410 0]
 
-  ;; An emailed-code account gets its code only when it asks, and the reset still completes.
+  ;; An emailed-code account gets its code only when it asks. The link stays as it was, so another
+  ;; browser opens it at the code entry and finishes the reset there.
   (let [user-id  23
         email    "email-2fa@pyr.dev"
         original (:settings (first (call-sql "get_user_settings" user-id)))
@@ -441,24 +431,40 @@
     (call-sql "set_verification_token" email "rct-reset" nil)
     (try
       (let [opened  (check-reset-link {} email "rct-reset")
-            asked   (with-redefs [email/send-email! (fn [_ to _] (reset! printed (with-out-str (email/mock-send-2fa-code to))))]
-                      (:session (send-reset-code {} email "rct-reset")))
-            back    (check-reset-link asked email "rct-reset")
+            _       (with-redefs [email/send-email! (fn [_ to _] (reset! printed (with-out-str (email/mock-send-2fa-code to))))]
+                      (send-reset-code {} email "rct-reset"))
+            other   (check-reset-link {} email "rct-reset")
             code    (second (re-find #"2FA CODE for .* : (\d+)" @printed))
-            cleared (:session (verify-reset-code asked email "rct-reset" code))
+            cleared (:session (verify-reset-code {} email "rct-reset" code))
             done    (set-user-password cleared email "New password 1A" "rct-reset")]
-        [(:body opened) (:body back) (:status done) (some? (get-in done [:session :user-id]))])
+        [(:body opened) (:body other) (:status done) (some? (get-in done [:session :user-id]))])
       (finally
         (call-sql "set_verification_token" email "rct-restore" nil)
         (call-sql "set_user_password" email "email2fa" "rct-restore")
         (call-sql "update_user_settings" user-id original))))
   ;=> ["{:step :code, :method :email, :sent? false}" "{:step :code, :method :email, :sent? true}" 200 true]
 
+  ;; A login's emailed code leaves a pending reset link alone.
+  (let [user-id  23
+        email    "email-2fa@pyr.dev"
+        original (:settings (first (call-sql "get_user_settings" user-id)))]
+    (call-sql "update_user_settings" user-id (pr-str {:timezone :utc :two-factor :email}))
+    (call-sql "set_verification_token" email "rct-reset" nil)
+    (try
+      (with-redefs [email/send-email! (fn [_ to _] (with-out-str (email/mock-send-2fa-code to)))]
+        (log-in {} email "email2fa"))
+      (:status (check-reset-link {} email "rct-reset"))
+      (finally
+        (call-sql "set_emailed_code" email nil nil)
+        (call-sql "set_verification_token" email nil nil)
+        (call-sql "update_user_settings" user-id original))))
+  ;=> 200
+
   ;; A wrong link is refused before anything about the account shows.
   (check-reset-link {} "totp-2fa@pyr.dev" "not-a-token")
   ;=>> {:status 410}
 
-  ;; An emailed login code shares the token column but is not a link, so no link route takes it.
+  ;; A token with an expiry, as emailed codes were once stored, is not a link, so no link route takes it.
   (do (call-sql "set_verification_token" "user@pyr.dev" "123456"
                 (java.sql.Timestamp. (+ (System/currentTimeMillis) 600000)))
       (try [(:status (check-reset-link {} "user@pyr.dev" "123456"))

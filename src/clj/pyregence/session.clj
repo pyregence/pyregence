@@ -128,35 +128,17 @@
   [session now]
   (live-marker (:pending-2fa session) [:user-id :user-email :password-set-ms] now))
 
-;; Reset markers ride on the current session: its login lasts until the new password logs in,
-;; and a logout mid-reset means asking for a new link.
-
-(defn awaiting-reset-code
-  "`session` waiting for the code mailed to `user` for the reset that `reset-token` opened. A resend
-  keeps the first window while it is open, so resending cannot stretch it."
-  [session {:keys [user-id user-email]} reset-token now]
-  (let [{earlier :reset-token :keys [expires-at]} (:pending-reset session)
-        open? (and (= earlier reset-token) expires-at (< now expires-at))]
-    (assoc session :pending-reset {:user-id     user-id
-                                   :user-email  user-email
-                                   :reset-token reset-token
-                                   :expires-at  (if open? expires-at (two-factor-deadline now))})))
-
-(defn pending-reset
-  "Who a reset code was mailed to in this session, and that reset's token, or nil."
-  [session now]
-  (live-marker (:pending-reset session) [:user-id :user-email :reset-token] now))
+;; The reset marker rides on the current session: its login lasts until the new password logs in,
+;; and a logout mid-reset means passing the code step again.
 
 (defn cleared-for-reset
   "`session` in which `user` passed the second factor for a reset while their password was the one
   set at `password-set-ms`, good for one code window."
   [session {:keys [user-id user-email]} password-set-ms now]
-  (-> session
-      (dissoc :pending-reset)
-      (assoc :reset-cleared {:user-id         user-id
-                             :user-email      user-email
-                             :password-set-ms password-set-ms
-                             :expires-at      (two-factor-deadline now)})))
+  (assoc session :reset-cleared {:user-id         user-id
+                                 :user-email      user-email
+                                 :password-set-ms password-set-ms
+                                 :expires-at      (two-factor-deadline now)}))
 
 (defn reset-clearance
   "Who passed the second factor for a reset in this session, and when their password was set then, or
@@ -198,8 +180,8 @@
    `:pending-2fa` is on it for the same reason and not a second one: the marker
    carries a user id of its own (PYR1-1615), so a page told nothing about
    `:user-id` while being handed `:pending-2fa` would have been told anyway. The
-   reset markers carry one too."
-  [:user-id :organization-id :pending-2fa :pending-reset :reset-cleared])
+   reset marker carries one too."
+  [:user-id :organization-id :pending-2fa :reset-cleared])
 
 (defn- page-facing
   "A session shaped the way a page receives one: PyreCast's own PKs out, and in
@@ -319,17 +301,12 @@
      (pending-user nil 1999)])
   ;=> [{:user-id 1 :user-email "a@b.c"} nil nil nil nil nil nil]
 
-  ;; Reset markers keep the login, expire with their window, and the clearance replaces the code.
-  (let [user    {:user-id 1 :user-email "a@b.c"}
-        pending (awaiting-reset-code {:user-id 7} user "t" 1000)
-        cleared (cleared-for-reset pending user 500 1000)]
-    [(pending-reset pending 900999)
-     (pending-reset pending 901000)
-     (set (keys cleared))
+  ;; The reset marker keeps the login and expires with its window.
+  (let [cleared (cleared-for-reset {:user-id 7} {:user-id 1 :user-email "a@b.c"} 500 1000)]
+    [(set (keys cleared))
      (reset-clearance cleared 900999)
      (reset-clearance cleared 901000)])
-  ;=> [{:user-id 1 :user-email "a@b.c" :reset-token "t"} nil #{:user-id :reset-cleared}
-  ;    {:user-id 1 :user-email "a@b.c" :password-set-ms 500} nil]
+  ;=> [#{:user-id :reset-cleared} {:user-id 1 :user-email "a@b.c" :password-set-ms 500} nil]
 
   ;; Logout revokes without timing out, so the clock alone cannot catch it.
   (let [now (System/currentTimeMillis)]
@@ -386,7 +363,7 @@
     (let [now (System/currentTimeMillis)]
       (-> {:user-id 1 :organization-id 7 :created-at now :last-active now
            :pending-2fa {:user-id 1 :user-email "a@b.c" :expires-at (+ now 1000)}
-           :pending-reset {:user-id 1} :reset-cleared {:user-id 1}}
+           :reset-cleared {:user-id 1}}
           (as-a-page-may-see-it)
           (select-keys internal-keys))))
   ;=> {}

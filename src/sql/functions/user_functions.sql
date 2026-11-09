@@ -41,6 +41,13 @@ CREATE OR REPLACE FUNCTION lower_trim(_str text)
 
 $$ LANGUAGE SQL;
 
+CREATE OR REPLACE FUNCTION sha256_hex(_str text)
+ RETURNS text as $$
+
+    SELECT encode(digest(_str, 'sha256'), 'hex')
+
+$$ LANGUAGE SQL IMMUTABLE;
+
 -- Returns user's settings for a given email
 CREATE OR REPLACE FUNCTION get_user_settings_by_email(_email text)
 RETURNS text AS $$
@@ -177,7 +184,30 @@ CREATE OR REPLACE FUNCTION set_verification_token(
 
 $$ LANGUAGE SQL;
 
--- Returns the user an unused emailed link names (login codes carry an expiry, so never match)
+-- Stores a user's emailed 2FA code as its SHA-256, apart from any pending link
+CREATE OR REPLACE FUNCTION set_emailed_code(
+  _email      text,
+  _code       text,
+  _expiration TIMESTAMP WITH TIME ZONE
+)
+ RETURNS void AS $$
+
+    UPDATE users
+    SET emailed_code = sha256_hex(_code),
+        code_expiration = _expiration
+    WHERE email = lower_trim(_email)
+
+$$ LANGUAGE SQL;
+
+-- Whether the user has an emailed 2FA code still waiting to be entered
+CREATE OR REPLACE FUNCTION emailed_code_pending(_user_id integer)
+ RETURNS boolean AS $$
+
+    SELECT EXISTS (SELECT 1 FROM users WHERE user_uid = _user_id AND code_expiration > NOW())
+
+$$ LANGUAGE SQL;
+
+-- Returns the user an unused emailed link names
 CREATE OR REPLACE FUNCTION get_user_by_link_token(_email text, _token text)
  RETURNS TABLE (user_id integer, user_email text) AS $$
 
@@ -236,7 +266,7 @@ CREATE OR REPLACE FUNCTION set_user_password(_email text, _password text, _token
         password_set_date = NOW()
     WHERE email = lower_trim(_email)
         AND verification_token = _token
-        AND token_expiration IS NULL  -- links only; emailed login codes carry an expiry
+        AND token_expiration IS NULL  -- links only: a token with an expiry was a mailed code
     RETURNING user_uid
   )
   SELECT r.* FROM updated, get_user_session_row(updated.user_uid) r;
@@ -298,13 +328,13 @@ CREATE OR REPLACE FUNCTION verify_user_email(_email text, _token text)
         token_expiration = NULL
     WHERE email = lower_trim(_email)
         AND verification_token = _token
-        AND token_expiration IS NULL  -- links only; emailed login codes carry an expiry
+        AND token_expiration IS NULL  -- links only: a token with an expiry was a mailed code
     RETURNING user_uid
   )
   SELECT r.* FROM updated, get_user_session_row(updated.user_uid) r;
 $$ LANGUAGE SQL;
 
--- Verifies a 2FA token without changing verified status
+-- Verifies an emailed 2FA code without changing verified status, spending it
 CREATE OR REPLACE FUNCTION verify_user_2fa(_email text, _token text)
  RETURNS TABLE (
     user_id               integer,
@@ -319,11 +349,11 @@ CREATE OR REPLACE FUNCTION verify_user_2fa(_email text, _token text)
 ) AS $$
   WITH updated AS (
     UPDATE users
-    SET verification_token = NULL,
-        token_expiration = NULL
+    SET emailed_code = NULL,
+        code_expiration = NULL
     WHERE email = lower_trim(_email)
-        AND verification_token = _token
-        AND token_expiration > NOW()
+        AND emailed_code = sha256_hex(_token)
+        AND code_expiration > NOW()
         AND email_verified = TRUE
     RETURNING user_uid
   )
