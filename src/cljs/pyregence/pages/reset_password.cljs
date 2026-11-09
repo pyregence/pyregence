@@ -32,8 +32,11 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn- check-reset-link!
-  "Asks the server what the link needs next."
+  "Asks the server what the link needs next, showing the page as checking, with the code box empty,
+   until it answers."
   []
+  (reset! code "")
+  (reset! link-state {:step :checking})
   (go
     (let [{:keys [success status body]} (<! (u-async/call-clj-async! "check-reset-link" @email @verification-token))]
       (reset! link-state (cond success        (u-data/response-data body)
@@ -67,33 +70,32 @@
               (= 410 status) (reset! link-state {:step :invalid})
               :else          (toast-message! (two-fa/code-rejection status)))))))
 
-(defn- reset-password! []
-  (when-not @pending?
-    (reset! pending? true)
-    (go
-      (let [errors (concat
-                    (remove nil?
-                            [(when (u-data/missing-data? @email @password @re-password)
+(defn- password-errors
+  "What is wrong with the typed passwords, or nil."
+  [new-password repeated]
+  (seq (concat (remove nil? [(when (u-data/missing-data? new-password repeated)
                                "Please fill in all the information.")
-
-                             (when (not= @password @re-password)
+                             (when (not= new-password repeated)
                                "Password fields do not match.")])
-                    ;; token is validated server-side
-                    (password->validations/->toast @password))]
+               (password->validations/->toast new-password))))
 
-        (if (seq errors)
-          (do (toast-message! (vec errors))
-              (reset! pending? false))
-          (let [{:keys [success body]} (<! (u-async/call-clj-async! "set-user-password" @email @password @verification-token))]
-            (if success
-              (do (toast-message! "Your password has been reset successfully.")
-                  (<! (timeout 2000))
-                  (u-browser/jump-to-url! "/forecast"))
-              (do (toast-message! (or (u-data/server-errors body)
-                                      "Error resetting password."))
-                  (reset! pending? false)
-                  ;; The code may have timed out meanwhile, so ask the link what it needs now.
-                  (check-reset-link!)))))))))
+(defn- reset-password! []
+  (if-let [errors (password-errors @password @re-password)]
+    (toast-message! (vec errors))
+    (when-not @pending?
+      (reset! pending? true)
+      (go
+        (let [{:keys [success status body]} (<! (u-async/call-clj-async! "set-user-password" @email @password @verification-token))]
+          (if success
+            (do (toast-message! "Your password has been reset successfully.")
+                (<! (timeout 2000))
+                (u-browser/jump-to-url! "/forecast"))
+            (do (reset! pending? false)
+                (cond (= 410 status) (reset! link-state {:step :invalid})
+                      (= 403 status) (do (toast-message! "Your verification expired. Please enter a new code.")
+                                         (check-reset-link!))
+                      :else          (toast-message! (or (u-data/server-errors body)
+                                                         "Error resetting password."))))))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; UI Components
@@ -116,10 +118,10 @@
 
 (defn- password-form []
   [:<>
-   [utils/input-labeled {:label       "Email"
-                         :placeholder "Enter Email Address"
-                         :on-change   #(reset! email (-> % .-target .-value))
-                         :value       @email}]
+   [utils/input-labeled {:label         "Email"
+                         :value         @email
+                         :read-only     true
+                         :auto-complete "username"}]
    [utils/input-labeled {:label       "New Password"
                          :type        "password"
                          :placeholder "New Password"
@@ -150,8 +152,6 @@
         (@update-fn)
         (reset! email              (:email params ""))
         (reset! verification-token (:verification-token params ""))
-        (reset! link-state {:step :checking})
-        (reset! code "")
         (reset! pending? false)
         (check-reset-link!))
       :component-will-unmount
