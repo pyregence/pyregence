@@ -122,12 +122,13 @@
      (into [:<>] children)]]])
 
 (defn code-rejection
-  "What to tell someone whose code was refused with `status`."
+  "What to tell someone whose code check failed with `status`."
   [status]
-  (if (= status 429)
+  (case status
     ;; Waiting is the only remedy: a password reset clears the login count, not this one.
-    "Too many incorrect codes. Please wait 5 minutes before trying again."
-    "Invalid verification code. Please try again."))
+    429 "Too many incorrect codes. Please wait 5 minutes before trying again."
+    403 "Invalid verification code. Please try again."
+    "Something went wrong. Please try again."))
 
 (defn- code-prompt [{:keys [auth-method user-email on-resend]}]
   (if (= :totp auth-method)
