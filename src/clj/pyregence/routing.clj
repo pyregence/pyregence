@@ -59,6 +59,15 @@
    [:post "/clj/note-activity"]                      {:handler (clj-handler session/note-activity)
                                                      :auth-type :member
                                                      :auth-action :block}
+   [:post "/clj/check-reset-link"]                   {:handler (clj-handler authentication/check-reset-link {:log-args? false})
+                                                     :auth-type :token
+                                                     :auth-action :block}
+   [:post "/clj/send-reset-code"]                    {:handler (clj-handler authentication/send-reset-code {:log-args? false})
+                                                     :auth-type :token
+                                                     :auth-action :block}
+   [:post "/clj/verify-reset-code"]                  {:handler (clj-handler authentication/verify-reset-code {:log-args? false})
+                                                     :auth-type :token
+                                                     :auth-action :block}
    [:post "/clj/set-user-password"]                  {:handler (clj-handler authentication/set-user-password {:log-args? false})
                                                      :auth-type :token
                                                      :auth-action :block}
