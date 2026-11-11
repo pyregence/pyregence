@@ -54,10 +54,12 @@
 
 (def default-fuel-version "2.5.0")
 
+(def cawfe-md-model "cawfe")
+
 (def valid-md-models
   "\"standard\" runs ELMFIRE + Pyretechnics; \"cawfe\" runs the coupled
    fire-atmosphere model. Each maps to its own sig3 network."
-  #{"standard" "cawfe"})
+  #{"standard" cawfe-md-model})
 
 (def default-md-model "standard")
 
@@ -83,7 +85,7 @@
 (defn model->polling-steps
   "The sig3 node names to watch for a model, keyed by step name and seeded as unseen."
   [model]
-  (if (= "cawfe" model) cawfe-polling-steps standard-polling-steps))
+  (if (= cawfe-md-model model) cawfe-polling-steps standard-polling-steps))
 
 (def ^:private conus-bounds
   {:min-x -125.0 :min-y 25.0 :max-x -66.0 :max-y 50.0})
@@ -231,7 +233,7 @@
 
 (defn- get-match-job-sig3 [match-job-id model]
   ;; The tenants run standard Match Drop only, so CAWFE stays on corespeq (PYR1-1833).
-  (if (= "cawfe" model)
+  (if (= cawfe-md-model model)
     (sig3-cluster)
     (sig3-cluster (sql-primitive (call-sql "get_match_job_org_unique_id" match-job-id)))))
 
@@ -328,7 +330,7 @@
 
 (defn- match-drop-args->body
   [model match-job-id params match-drop-config]
-  (if (= "cawfe" model)
+  (if (= cawfe-md-model model)
     (cawfe-match-drop-args->body match-job-id params match-drop-config)
     (standard-match-drop-args->body match-job-id params match-drop-config)))
 
@@ -503,7 +505,7 @@
         {:keys [fuel-version lat lon wx-type]}  match-drop-job-params
         fuel-version                            (or fuel-version default-fuel-version)
         model                                   (or (:model match-drop-job-params) default-md-model)
-        cawfe?                                  (= "cawfe" model)
+        cawfe?                                  (= cawfe-md-model model)
         match-drop-job-params                   (assoc match-drop-job-params
                                                        :fuel-version fuel-version
                                                        :model        model)]
