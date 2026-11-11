@@ -154,11 +154,17 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (def common-underlays
-  {:conus-buildings    {:enabled?      #(feature-enabled? :structures)
-                        :opt-label     "Structures"
-                        :z-index       104
-                        :filter-set    #{"fire-detections" "conus-buildings"}
-                        :geoserver-key :shasta}})
+  (array-map
+   :conus-buildings  {:enabled?      #(feature-enabled? :structures)
+                      :opt-label     "U.S. Structures"
+                      :z-index       105
+                      :filter-set    #{"fire-detections" "conus-buildings"}
+                      :geoserver-key :shasta}
+   :canada-buildings {:enabled?      #(feature-enabled? :structures)
+                      :opt-label     "Canada Structures"
+                      :z-index       104
+                      :filter-set    #{"fire-detections" "canada-buildings"}
+                      :geoserver-key :shasta}))
 
 ;; TODO add in an API route to dynamically grab this from the org_unique_id column in the organizations table
 (def all-utility-companies #{:anza :atco :beartooth :bighorn :butte :canadian-valley

@@ -198,7 +198,7 @@
           [:br]
           [:br]
           [:strong "Structures"]
-          " - Microsoft building footprints."
+          " - U.S. structures from Microsoft building footprints and FEMA USA Structures. Canada structures from Public Safety Canada."
           [:br]
           [:br]
           [:strong "2026 fire perimeters"]
