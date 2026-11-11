@@ -15,7 +15,7 @@
   (str "https://api.weather.gc.ca/collections/swob-realtime/items?f=json&sortby=-date_tm-value&limit=1&msc_id-value=" station-id))
 
 (comment
-  ;; example http observation response
+  ;; example CA rest api http observation response
   (def response
     {:type "FeatureCollection",
      :features
@@ -218,6 +218,24 @@
                                  (str "-uom")
                                  keyword
                                  properties)))
+                      keys-ordered-by-business-preference-for-selection-to-show)]
+        (assoc display-name->value-with-metric-unit display-name value)
+        display-name->value-with-metric-unit))
+    {})))
+
+(defn xml-properties->display-name->value-with-uom
+  [properties]
+  (->>
+   display-name->perferred-properties-order
+   (reduce-kv
+    (fn [display-name->value-with-metric-unit
+         display-name
+         keys-ordered-by-business-preference-for-selection-to-show]
+      (if-let [value (some
+                      (fn [k]
+                        (when-let [{:keys [uom value]} (properties k)]
+                          (when-not (str/blank? value)
+                            (str value uom))))
                       keys-ordered-by-business-preference-for-selection-to-show)]
         (assoc display-name->value-with-metric-unit display-name value)
         display-name->value-with-metric-unit))
