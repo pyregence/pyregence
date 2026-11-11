@@ -227,8 +227,11 @@
   ;=> {:match-job-id 42 :org-id nil}
   )
 
-(defn- get-match-job-sig3 [match-job-id]
-  (get-sig3 (sql-primitive (call-sql "get_match_job_org_unique_id" match-job-id))))
+(defn- get-match-job-sig3 [match-job-id model]
+  ;; The tenants run standard Match Drop only, so CAWFE stays on corespeq (PYR1-1833).
+  (if (= "cawfe" model)
+    (get-sig3 nil)
+    (get-sig3 (sql-primitive (call-sql "get_match_job_org_unique_id" match-job-id)))))
 
 (defn- update-match-job!
   "Updates any of the properties of a match job based on a match-job-id (required).
@@ -461,7 +464,7 @@
         ;; fix means renaming the sig3/GeoServer workspace, out of scope here.
         public-id                     {:match-job-unique-id (:match-job-unique-id (get-match-job-from-match-job-id! match-job-id))}]
     (try
-      (let [sig3                               (get-match-job-sig3 match-job-id)
+      (let [sig3                               (get-match-job-sig3 match-job-id model)
             {:keys [job-id match-drop-inputs]} (submit-match-drop-job! params sig3 match-job-id)
             {:keys [geoserver-workspace]}      match-drop-inputs]
         (update-match-job! {:display-name        (or display-name (str "Match Drop " match-job-id))
@@ -603,7 +606,7 @@
   (let [job (get-match-job-from-uuid! match-job-unique-id)]
     (if (and job (= user-id (:user-id job)))
       (let [match-job-id                          (:match-job-id job)
-            sig3                                  (get-match-job-sig3 match-job-id)
+            sig3                                  (get-match-job-sig3 match-job-id (:model job))
             {:keys [request geoserver-workspace]} (get-match-job-from-match-job-id! match-job-id)
             geosync-host                          (:geosync-host request)
             geosync-port                          (:geosync-port request)]
