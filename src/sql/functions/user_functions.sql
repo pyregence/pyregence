@@ -24,6 +24,24 @@ AFTER DELETE ON organizations
 FOR EACH ROW
 EXECUTE FUNCTION demote_users_on_org_delete();
 
+-- Keep track of when user information was updated.
+CREATE TRIGGER track_when_user_updates
+  BEFORE UPDATE OF
+    email,
+    name,
+    password,
+    settings,
+    match_drop_access,
+    email_verified,
+    user_role,
+    org_membership_status,
+    organization_rid,
+    password_set_date
+  ON USERS
+  FOR EACH ROW
+    EXECUTE FUNCTION update_updated_at_column();
+
+
 --------------------------------------------------------------------------------
 -- Helper functions
 --------------------------------------------------------------------------------
@@ -313,7 +331,9 @@ CREATE OR REPLACE FUNCTION get_all_users()
   last_login_date       timestamptz,
   user_role             user_role,
   org_membership_status org_membership_status,
-  organization_name     text
+  organization_name     text,
+  created_at            timestamptz,
+  updated_at            timestamptz
  ) AS $$
     -- The sequential user_uid PK is intentionally not selected: nothing needs it
     -- client-side (user actions key off email) and it must not reach the browser
@@ -327,7 +347,10 @@ CREATE OR REPLACE FUNCTION get_all_users()
       u.last_login_date,
       u.user_role,
       u.org_membership_status,
-      o.org_name
+      o.org_name,
+      u.created_at,
+      u.updated_at
+
     FROM users u
     LEFT JOIN organizations o
       ON u.organization_rid = o.organization_uid

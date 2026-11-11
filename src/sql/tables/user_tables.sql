@@ -23,6 +23,7 @@ CREATE TYPE org_membership_status AS ENUM (
 --------------------------------------------------------------------------------
 -- Stores information about users
 --------------------------------------------------------------------------------
+-- NOTE New columns should consider being added to the track_when_user_updates column list.
 CREATE TABLE users (
     user_uid               SERIAL PRIMARY KEY,
     email                  text NOT NULL UNIQUE,
@@ -40,7 +41,9 @@ CREATE TABLE users (
     password_set_date      TIMESTAMP WITH TIME ZONE DEFAULT NULL,
     procurement_account_id text,
     google_user_identity   text,
-    session_invalidated_at bigint NOT NULL DEFAULT 0
+    session_invalidated_at bigint NOT NULL DEFAULT 0,
+    created_at             TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at             TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
 ALTER TABLE users

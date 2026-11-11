@@ -1094,7 +1094,8 @@
   [_]
   (->> (call-sql "get_all_users")
        (mapv (fn [{:keys [email name settings match_drop_access email_verified
-                          last_login_date user_role org_membership_status organization_name]}]
+                          last_login_date user_role org_membership_status organization_name
+                         created_at updated_at]}]
                {:email                 email
                 :name                  name
                 :settings              settings
@@ -1103,7 +1104,9 @@
                 :last-login-date       last_login_date
                 :user-role             user_role
                 :org-membership-status org_membership_status
-                :organization-name     organization_name}))
+                :organization-name     organization_name
+                :created-at            created_at
+                :updated-at            updated_at}))
        (data-response)))
 
 ^:rct/test
