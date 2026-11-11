@@ -31,16 +31,18 @@
 (defn- get-sig3-endpoint []
   (get (get-md-config :sig3-endpoints) (get-md-config :sig3-target)))
 
-(defn- get-sig3
-  "The sig3 endpoint and token for an org. Orgs not in :sig3-org-endpoints, and no
-   org, use :sig3-target with :sig3-auth. A tenant never falls back to :sig3-auth,
-   so the corespeq token is not sent to another cluster."
-  [org-unique-id]
-  (if-let [{:keys [url auth]} (get (get-md-config :sig3-org-endpoints) (keyword org-unique-id))]
-    {:endpoint url
-     :auth     auth}
-    {:endpoint (get-sig3-endpoint)
-     :auth     (get-md-config :sig3-auth)}))
+(defn- sig3-cluster
+  "The sig3 endpoint and token: with no org, :sig3-target with :sig3-auth (corespeq).
+   Orgs not in :sig3-org-endpoints, and a nil org, get the same. A tenant never
+   falls back to :sig3-auth, so the corespeq token is not sent to another cluster."
+  ([]
+   {:endpoint (get-sig3-endpoint)
+    :auth     (get-md-config :sig3-auth)})
+  ([org-unique-id]
+   (if-let [{:keys [url auth]} (get (get-md-config :sig3-org-endpoints) (keyword org-unique-id))]
+     {:endpoint url
+      :auth     auth}
+     (sig3-cluster))))
 
 (defn- cawfe-artefact-storage-configured?
   "Whether this environment names the storage prefix for CAWFE run artifacts."
@@ -52,10 +54,12 @@
 
 (def default-fuel-version "2.5.0")
 
+(def cawfe-md-model "cawfe")
+
 (def valid-md-models
   "\"standard\" runs ELMFIRE + Pyretechnics; \"cawfe\" runs the coupled
    fire-atmosphere model. Each maps to its own sig3 network."
-  #{"standard" "cawfe"})
+  #{"standard" cawfe-md-model})
 
 (def default-md-model "standard")
 
@@ -81,7 +85,7 @@
 (defn model->polling-steps
   "The sig3 node names to watch for a model, keyed by step name and seeded as unseen."
   [model]
-  (if (= "cawfe" model) cawfe-polling-steps standard-polling-steps))
+  (if (= cawfe-md-model model) cawfe-polling-steps standard-polling-steps))
 
 (def ^:private conus-bounds
   {:min-x -125.0 :min-y 25.0 :max-x -66.0 :max-y 50.0})
@@ -227,8 +231,11 @@
   ;=> {:match-job-id 42 :org-id nil}
   )
 
-(defn- get-match-job-sig3 [match-job-id]
-  (get-sig3 (sql-primitive (call-sql "get_match_job_org_unique_id" match-job-id))))
+(defn- get-match-job-sig3 [match-job-id model]
+  ;; The tenants run standard Match Drop only, so CAWFE stays on corespeq (PYR1-1833).
+  (if (= cawfe-md-model model)
+    (sig3-cluster)
+    (sig3-cluster (sql-primitive (call-sql "get_match_job_org_unique_id" match-job-id)))))
 
 (defn- update-match-job!
   "Updates any of the properties of a match job based on a match-job-id (required).
@@ -323,7 +330,7 @@
 
 (defn- match-drop-args->body
   [model match-job-id params match-drop-config]
-  (if (= "cawfe" model)
+  (if (= cawfe-md-model model)
     (cawfe-match-drop-args->body match-job-id params match-drop-config)
     (standard-match-drop-args->body match-job-id params match-drop-config)))
 
@@ -461,7 +468,7 @@
         ;; fix means renaming the sig3/GeoServer workspace, out of scope here.
         public-id                     {:match-job-unique-id (:match-job-unique-id (get-match-job-from-match-job-id! match-job-id))}]
     (try
-      (let [sig3                               (get-match-job-sig3 match-job-id)
+      (let [sig3                               (get-match-job-sig3 match-job-id model)
             {:keys [job-id match-drop-inputs]} (submit-match-drop-job! params sig3 match-job-id)
             {:keys [geoserver-workspace]}      match-drop-inputs]
         (update-match-job! {:display-name        (or display-name (str "Match Drop " match-job-id))
@@ -498,7 +505,7 @@
         {:keys [fuel-version lat lon wx-type]}  match-drop-job-params
         fuel-version                            (or fuel-version default-fuel-version)
         model                                   (or (:model match-drop-job-params) default-md-model)
-        cawfe?                                  (= "cawfe" model)
+        cawfe?                                  (= cawfe-md-model model)
         match-drop-job-params                   (assoc match-drop-job-params
                                                        :fuel-version fuel-version
                                                        :model        model)]
@@ -603,7 +610,7 @@
   (let [job (get-match-job-from-uuid! match-job-unique-id)]
     (if (and job (= user-id (:user-id job)))
       (let [match-job-id                          (:match-job-id job)
-            sig3                                  (get-match-job-sig3 match-job-id)
+            sig3                                  (get-match-job-sig3 match-job-id (:model job))
             {:keys [request geoserver-workspace]} (get-match-job-from-match-job-id! match-job-id)
             geosync-host                          (:geosync-host request)
             geosync-port                          (:geosync-port request)]
