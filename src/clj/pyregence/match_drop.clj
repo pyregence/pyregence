@@ -31,16 +31,18 @@
 (defn- get-sig3-endpoint []
   (get (get-md-config :sig3-endpoints) (get-md-config :sig3-target)))
 
-(defn- get-sig3
-  "The sig3 endpoint and token for an org. Orgs not in :sig3-org-endpoints, and no
-   org, use :sig3-target with :sig3-auth. A tenant never falls back to :sig3-auth,
-   so the corespeq token is not sent to another cluster."
-  [org-unique-id]
-  (if-let [{:keys [url auth]} (get (get-md-config :sig3-org-endpoints) (keyword org-unique-id))]
-    {:endpoint url
-     :auth     auth}
-    {:endpoint (get-sig3-endpoint)
-     :auth     (get-md-config :sig3-auth)}))
+(defn- sig3-cluster
+  "The sig3 endpoint and token: with no org, :sig3-target with :sig3-auth (corespeq).
+   Orgs not in :sig3-org-endpoints, and a nil org, get the same. A tenant never
+   falls back to :sig3-auth, so the corespeq token is not sent to another cluster."
+  ([]
+   {:endpoint (get-sig3-endpoint)
+    :auth     (get-md-config :sig3-auth)})
+  ([org-unique-id]
+   (if-let [{:keys [url auth]} (get (get-md-config :sig3-org-endpoints) (keyword org-unique-id))]
+     {:endpoint url
+      :auth     auth}
+     (sig3-cluster))))
 
 (defn- cawfe-artefact-storage-configured?
   "Whether this environment names the storage prefix for CAWFE run artifacts."
@@ -230,8 +232,8 @@
 (defn- get-match-job-sig3 [match-job-id model]
   ;; The tenants run standard Match Drop only, so CAWFE stays on corespeq (PYR1-1833).
   (if (= "cawfe" model)
-    (get-sig3 nil)
-    (get-sig3 (sql-primitive (call-sql "get_match_job_org_unique_id" match-job-id)))))
+    (sig3-cluster)
+    (sig3-cluster (sql-primitive (call-sql "get_match_job_org_unique_id" match-job-id)))))
 
 (defn- update-match-job!
   "Updates any of the properties of a match job based on a match-job-id (required).
