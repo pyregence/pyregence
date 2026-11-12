@@ -67,7 +67,7 @@
    (when icon [icon :height "16px" :width "16px"])])
 
 (defn input-field
-  [{:keys [value on-change style support-message placeholder type] :or {type "text"}}]
+  [{:keys [value on-change style support-message placeholder type read-only auto-complete] :or {type "text"}}]
   [:div {:style {:display        "flex"
                  :flex-direction "column"}}
    [:input {:type      type
@@ -83,6 +83,8 @@
                                :border-radius "4px"} style)
             :value     value
             :placeholder placeholder
+            :read-only read-only
+            :auto-complete auto-complete
             :pattern   ".+"
             :on-change on-change}]
    (when support-message
