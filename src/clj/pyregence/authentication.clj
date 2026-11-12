@@ -1337,8 +1337,7 @@
 (defn update-org-info [{:keys [user-id]} org-uuid org-name email-domains auto-add? auto-accept? number-of-customers]
   (let [org-id (org-uuid->id org-uuid)]
     (cond
-      (and (int? number-of-customers) (pos? number-of-customers))
-
+      (not (nat-int? number-of-customers))
       (data-response "Number of customers must be positive." {:status 403})
 
       (not (can-admin-org? user-id org-id))

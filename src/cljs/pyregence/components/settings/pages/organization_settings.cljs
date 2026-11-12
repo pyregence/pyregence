@@ -110,7 +110,9 @@
        :min       0
        :step      1
        :inputmode "numeric"
-       :on-change #(swap! org-uuid->org assoc-in [org-uuid :unsaved-number-of-customers] (.-valueAsNumber (.-target %)))
+       :on-change #(swap! org-uuid->org assoc-in [org-uuid :unsaved-number-of-customers]
+                          (let [n (.-valueAsNumber (.-target %))]
+                            (when (nat-int? n) n)))
        :value     unsaved-number-of-customers}]
      [checkbox unsaved-auto-accept? #(swap! org-uuid->org update-in [org-uuid :unsaved-auto-accept?] not) "Auto Accept User as Organization Member"]
      [checkbox unsaved-auto-add? #(swap! org-uuid->org update-in [org-uuid :unsaved-auto-add?] not)  "Auto Add User as Organization Member"]
