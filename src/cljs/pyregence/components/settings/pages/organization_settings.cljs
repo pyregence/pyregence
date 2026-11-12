@@ -109,7 +109,7 @@
        :type      "number"
        :min       0
        :step      1
-       :inputmode "numeric"
+       :inputMode "numeric"
        :on-change #(swap! org-uuid->org assoc-in [org-uuid :unsaved-number-of-customers]
                           (let [n (.-valueAsNumber (.-target %))]
                             (when (nat-int? n) n)))
