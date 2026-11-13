@@ -328,7 +328,7 @@
                           (merge-fn (split-isochrones-layer-name full-name))
 
                           (or (re-matches #"fire-detections.*_\d{8}_\d{6}" full-name)
-                              (re-matches #"fire-detections.*:(goes19-rgb|fire-history|conus-buildings|us-transmission-lines|.*boundaries).*" full-name))
+                              (re-matches #"fire-detections.*:(goes19-rgb|fire-history|conus-buildings|canada-buildings|us-transmission-lines|.*boundaries).*" full-name))
                           (merge-fn (split-fire-detections full-name))
 
                           (str/starts-with? full-name "fuels")
@@ -621,6 +621,23 @@
         [(get-in r [:active-fires :ca-plaskett :resets])
          (get-in r [:match-drops :md-904 :resets])])))
   ;=> [{:model :elmfire} {:model :cawfe}]
+
+  ;; U.S. and Canada structures SINGLE-mode Layer Groups register, while internal
+  ;; zoom-pyramid tier featureTypes (`*_buildings_z4`..`*_buildings_full`) stay excluded.
+  (let [xml (str "<WMS_Capabilities><Capability><Layer>"
+                 "<Layer><Name>fire-detections_conus-buildings:conus-buildings</Name>"
+                 "<BoundingBox CRS=\"CRS:84\" minx=\"-180.0\" miny=\"18.0\" maxx=\"180.0\" maxy=\"72.0\"/></Layer>"
+                 "<Layer><Name>fire-detections_conus-buildings:conus_buildings_z4</Name>"
+                 "<BoundingBox CRS=\"CRS:84\" minx=\"-180.0\" miny=\"18.0\" maxx=\"180.0\" maxy=\"72.0\"/></Layer>"
+                 "<Layer><Name>fire-detections_canada-buildings:canada-buildings</Name>"
+                 "<BoundingBox CRS=\"CRS:84\" minx=\"-142.0\" miny=\"41.0\" maxx=\"-52.0\" maxy=\"85.0\"/></Layer>"
+                 "<Layer><Name>fire-detections_canada-buildings:canada_buildings_full</Name>"
+                 "<BoundingBox CRS=\"CRS:84\" minx=\"-142.0\" miny=\"41.0\" maxx=\"-52.0\" maxy=\"85.0\"/></Layer>"
+                 "</Layer></Capability></WMS_Capabilities>")]
+    (with-redefs [client/get (constantly {:body xml})]
+      (mapv #(select-keys % [:layer :filter-set])
+            (#'process-layers! "http://geoserver01:8080/geoserver" nil nil))))
+  ;=> [{:layer "fire-detections_conus-buildings:conus-buildings" :filter-set #{"fire-detections" "conus-buildings" nil}} {:layer "fire-detections_canada-buildings:canada-buildings" :filter-set #{"fire-detections" "canada-buildings" nil}}]
   )
 
 (defn get-user-layers [session]

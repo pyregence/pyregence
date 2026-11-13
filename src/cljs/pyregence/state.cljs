@@ -19,7 +19,7 @@ Ex: {:fuels {:layer :fbfm40, :model :landfire-2.2.0, :model-init :20210407_00000
   *params (r/atom {}))
 (defonce ^{:doc "A map containing the selected optional layers.
 Ex: {:us-trans-lines {:opt-label \"Transmission lines\", :z-index 107, ...},
-     :conus-buildings {:opt-label \"Structures\", :z-index 104, ...}}"}
+     :conus-buildings {:opt-label \"U.S. Structures\", :z-index 105, ...}}"}
   *optional-layers (r/atom {}))
 (defonce ^{:doc "The most recently enabled optional layer."}
   most-recent-optional-layer (r/atom {}))
