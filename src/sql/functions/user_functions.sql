@@ -25,7 +25,7 @@ FOR EACH ROW
 EXECUTE FUNCTION demote_users_on_org_delete();
 
 -- Function for automatic updated_at timestamp maintenance
-CREATE OR REPLACE FUNCTION update_updated_at_column()
+CREATE OR REPLACE FUNCTION update_user_updated_at_column()
 RETURNS TRIGGER AS $$
 BEGIN
     NEW.updated_at = CURRENT_TIMESTAMP;
@@ -48,7 +48,7 @@ CREATE TRIGGER track_when_user_updates
     password_set_date
   ON USERS
   FOR EACH ROW
-    EXECUTE FUNCTION update_updated_at_column();
+    EXECUTE FUNCTION update_user_updated_at_column();
 
 
 --------------------------------------------------------------------------------
