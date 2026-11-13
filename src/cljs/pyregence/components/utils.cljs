@@ -67,26 +67,25 @@
    (when icon [icon :height "16px" :width "16px"])])
 
 (defn input-field
-  [{:keys [value on-change style support-message placeholder type read-only auto-complete] :or {type "text"}}]
+  [{:keys [style support-message] :or {type "text"} :as m}]
   [:div {:style {:display        "flex"
                  :flex-direction "column"}}
-   [:input {:type      type
-            :class     (<class $standard-input-field)
-            :style     (merge {:font-weight   "500"
-                               :width         "100%"
-                               :max-width     "350px"
-                               :height        "50px"
-                               :font-size     "14px"
-                               :font-style    "normal"
-                               :line-height   "22px"
-                               :padding       "14px"
-                               :border-radius "4px"} style)
-            :value     value
-            :placeholder placeholder
-            :read-only read-only
-            :auto-complete auto-complete
-            :pattern   ".+"
-            :on-change on-change}]
+   [:input
+    ;;TODO it feels risky to pass in the fields like this, brainstorm a better
+    ;; way to compose this.
+    (merge
+      m
+     {:class     (<class $standard-input-field)
+      :style     (merge {:font-weight   "500"
+                         :width         "100%"
+                         :max-width     "350px"
+                         :height        "50px"
+                         :font-size     "14px"
+                         :font-style    "normal"
+                         :line-height   "22px"
+                         :padding       "14px"
+                         :border-radius "4px"} style)
+      :pattern   ".+"})]
    (when support-message
      [:p {:style {:color "red"}} support-message])])
 

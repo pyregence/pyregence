@@ -37,7 +37,8 @@ CREATE TABLE organizations (
     marketplace_status     marketplace_status NOT NULL DEFAULT 'none',
     pre_suspend_tier       subscription_tier,
     usage_reporting_id     text,
-    gcp_project_id         text
+    gcp_project_id         text,
+    number_of_customers    integer NOT NULL DEFAULT 0
 );
 
 --------------------------------------------------------------------------------
