@@ -24,6 +24,15 @@ AFTER DELETE ON organizations
 FOR EACH ROW
 EXECUTE FUNCTION demote_users_on_org_delete();
 
+-- Function for automatic updated_at timestamp maintenance
+CREATE OR REPLACE FUNCTION update_updated_at_column()
+RETURNS TRIGGER AS $$
+BEGIN
+    NEW.updated_at = CURRENT_TIMESTAMP;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
 -- Keep track of when user information was updated.
 CREATE TRIGGER track_when_user_updates
   BEFORE UPDATE OF
