@@ -209,13 +209,13 @@
    `:ecmwf` and `:nve` are injected at runtime from the organization_layers DB
    table, so they're easy to forget here - leaving them out strands the NFDRS
    parameter selected when you switch to those models."
-  #{:nbm :hrrr :rrfs :hrdps :rdps :gdps :hybrid :gfs0p125 :gfs0p25 :nam-awip12 :nam-conusnest :cansac-wrf :rtma-ru
+  #{:nbm :hrrr :rrfs :hrdps :rdps :gdps :hybrid :hybrid-canada :gfs0p125 :gfs0p25 :nam-awip12 :nam-conusnest :cansac-wrf :rtma-ru
     :ecmwf :nve :cffdrs})
 
 (def ^:private non-cffdrs-weather-models
   "All non-CFFDRS weather models. The CFFDRS-only Weather Parameters are
    disabled-for these so they can only be selected with the CFFDRS model."
-  #{:nbm :hrrr :rrfs :hrdps :rdps :gdps :hybrid :gfs0p125 :gfs0p25 :nam-awip12 :nam-conusnest :cansac-wrf :rtma-ru
+  #{:nbm :hrrr :rrfs :hrdps :rdps :gdps :hybrid :hybrid-canada :gfs0p125 :gfs0p25 :nam-awip12 :nam-conusnest :cansac-wrf :rtma-ru
     :nfdrs-constant :nfdrs-variable :ecmwf :nve})
 
 (def ^:private metric-weather-models
@@ -231,7 +231,7 @@
    - Its own band name (tmp for Celsius, against tmpf for Fahrenheit): the two are
      separate parameters, each disabled-for the other's models, so no override is
      needed -- the band's own :units and default style are already metric."
-  #{:hrdps :rdps :gdps})
+  #{:hrdps :rdps :gdps :hybrid-canada})
 
 (def ^:private non-metric-weather-models
   "All weather models that do not publish the Celsius `tmp` band, which is
@@ -284,24 +284,24 @@
                                                                                          :landfire-2.0.0 :landfire-2.1.0 :landfire-2.2.0
                                                                                          :landfire-2.3.0 :landfire-2.4.0 :landfire-2.5.0
                                                                                         :landfire-2.5.0-2.4.0 :landfire-2.4.0-hi
-                                                                                        :landfire-2.5.0-ak :sig-alphaearth-2025}}
+                                                                                        :landfire-2.5.0-ak :landfire-2.6.0 :sig-alphaearth-2025}}
                                                             :asp    {:opt-label       "Aspect"
                                                                      :filter          "asp"
                                                                      :units           ""
                                                                      :convert         #(str (u-misc/direction %) " (" % "°)")
                                                                      :reverse-legend? false
-                                                                     :disabled-for    #{:cecs :cfo :fire-factor-2022 :fire-factor-2023 :fire-factor-2024 :landfire-1.0.5 :landfire-1.3.0 :landfire-1.4.0 :landfire-2.0.0 :landfire-2.1.0 :landfire-2.3.0 :landfire-2.4.0 :landfire-2.5.0-2.4.0 :landfire-2.5.0 :sig-alphaearth-2025}}
+                                                                     :disabled-for    #{:cecs :cfo :fire-factor-2022 :fire-factor-2023 :fire-factor-2024 :landfire-1.0.5 :landfire-1.3.0 :landfire-1.4.0 :landfire-2.0.0 :landfire-2.1.0 :landfire-2.3.0 :landfire-2.4.0 :landfire-2.5.0-2.4.0 :landfire-2.5.0 :landfire-2.6.0 :sig-alphaearth-2025}}
                                                             :slp    {:opt-label       "Slope"
                                                                      :filter          "slp"
                                                                      :units           "\u00B0"
                                                                      :reverse-legend? true
-                                                                     :disabled-for    #{:cecs :cfo :fire-factor-2022 :fire-factor-2023 :fire-factor-2024 :landfire-1.0.5 :landfire-1.3.0 :landfire-1.4.0 :landfire-2.0.0 :landfire-2.1.0 :landfire-2.3.0 :landfire-2.4.0 :landfire-2.5.0-2.4.0 :landfire-2.5.0 :landfire-2.4.0-hi :landfire-2.5.0-ak :sig-alphaearth-2025}}
+                                                                     :disabled-for    #{:cecs :cfo :fire-factor-2022 :fire-factor-2023 :fire-factor-2024 :landfire-1.0.5 :landfire-1.3.0 :landfire-1.4.0 :landfire-2.0.0 :landfire-2.1.0 :landfire-2.3.0 :landfire-2.4.0 :landfire-2.5.0-2.4.0 :landfire-2.5.0 :landfire-2.4.0-hi :landfire-2.5.0-ak :landfire-2.6.0 :sig-alphaearth-2025}}
                                                             :dem    {:opt-label       "Elevation"
                                                                      :filter          "dem"
                                                                      :units           "ft"
                                                                      :convert         #(u-num/to-precision 1 (* % 3.28084))
                                                                      :reverse-legend? true
-                                                                     :disabled-for    #{:cecs :cfo :fire-factor-2022 :fire-factor-2023 :fire-factor-2024 :landfire-1.0.5 :landfire-1.3.0 :landfire-1.4.0 :landfire-2.0.0 :landfire-2.1.0 :landfire-2.3.0 :landfire-2.4.0 :landfire-2.5.0-2.4.0 :landfire-2.5.0 :sig-alphaearth-2025}}
+                                                                     :disabled-for    #{:cecs :cfo :fire-factor-2022 :fire-factor-2023 :fire-factor-2024 :landfire-1.0.5 :landfire-1.3.0 :landfire-1.4.0 :landfire-2.0.0 :landfire-2.1.0 :landfire-2.3.0 :landfire-2.4.0 :landfire-2.5.0-2.4.0 :landfire-2.5.0 :landfire-2.6.0 :sig-alphaearth-2025}}
                                                             :cc     {:opt-label       "Canopy Cover"
                                                                      :filter          "cc"
                                                                      :units           "%"
@@ -331,8 +331,8 @@
                                   :model      {:opt-label      "Source"
                                                ;; cffdrs-2024 is first in :options (so it renders at the top),
                                                ;; but it is incompatible with the default :fbfm40 layer. Pin the
-                                               ;; default source to LANDFIRE 2.5.0 so the Fuels tab opens compatible.
-                                               :default-option :landfire-2.5.0
+                                               ;; default source to LANDFIRE 2.6.0 so the Fuels tab opens compatible.
+                                               :default-option :landfire-2.6.0
                                                :hover-text [:p {:style {:margin-bottom "0"}}
                                                             [:strong "LANDFIRE"]
                                                             " –  Stock data provided by "
@@ -393,6 +393,9 @@
                                                :options    (array-map
                                                             :cffdrs-2024          {:opt-label "CFFDRS 2024"
                                                                                    :filter    "cffdrs-2024"}
+                                                            :landfire-2.6.0       {:opt-label    "LANDFIRE 2.6.0 (2026 capable)"
+                                                                                   :filter       "landfire-2.6.0"
+                                                                                   :disabled-for #{:asp :slp :dem}}
                                                             :landfire-2.5.0       {:opt-label    "LANDFIRE 2.5.0 (2025 capable)"
                                                                                    :filter       "landfire-2.5.0"
                                                                                    :disabled-for #{:asp :slp :dem}}
@@ -544,7 +547,7 @@
                                                               :tmpf    {:opt-label "Temperature (\u00B0F)"
                                                                         :filter    "tmpf"
                                                                         :units     "\u00B0F"
-                                                                        :disabled-for #{:hrdps :rdps :gdps :nfdrs-constant :nfdrs-variable :cffdrs}}
+                                                                        :disabled-for #{:hrdps :rdps :gdps :hybrid-canada :nfdrs-constant :nfdrs-variable :cffdrs}}
                                                               ;; The band name carries the unit: models publishing Fahrenheit ship
                                                               ;; `tmpf`, metric ones ship `tmp` in Celsius. They are the same quantity
                                                               ;; from different sources, so each is disabled-for the other's models
@@ -556,15 +559,15 @@
                                                               :ffwi    {:opt-label "Fosberg Fire Weather Index"
                                                                         :filter    "ffwi"
                                                                         :units     ""
-                                                                        :disabled-for #{:hrdps :rdps :gdps :nfdrs-constant :nfdrs-variable :cffdrs}}
+                                                                        :disabled-for #{:hrdps :rdps :gdps :hybrid-canada :nfdrs-constant :nfdrs-variable :cffdrs}}
                                                               :meq     {:opt-label "Fine dead fuel moisture"
                                                                         :filter    "meq"
                                                                         :units     "%"
-                                                                        :disabled-for #{:hrdps :rdps :gdps :nfdrs-constant :nfdrs-variable :cffdrs}}
+                                                                        :disabled-for #{:hrdps :rdps :gdps :hybrid-canada :nfdrs-constant :nfdrs-variable :cffdrs}}
                                                               :pign    {:opt-label "Firebrand ignition probability"
                                                                         :filter    "pign"
                                                                         :units     "%"
-                                                                        :disabled-for #{:hrdps :rdps :gdps :nfdrs-constant :nfdrs-variable :cffdrs}}
+                                                                        :disabled-for #{:hrdps :rdps :gdps :hybrid-canada :nfdrs-constant :nfdrs-variable :cffdrs}}
                                                               :wd      {:opt-label       "Wind direction"
                                                                         :filter          "wd"
                                                                         :units           "\u00B0"
@@ -590,7 +593,7 @@
                                                               :apcptot {:opt-label       "Accumulated precipitation"
                                                                         :filter          "apcptot"
                                                                         :units           "inches"
-                                                                        :disabled-for    #{:hrdps :rdps :gdps :gfs0p125 :hybrid :rtma-ru :ecmwf :nve :nfdrs-constant :nfdrs-variable :cffdrs}
+                                                                        :disabled-for    #{:hrdps :rdps :gdps :gfs0p125 :hybrid :hybrid-canada :rtma-ru :ecmwf :nve :nfdrs-constant :nfdrs-variable :cffdrs}
                                                                         :reverse-legend? false}
                                                               :apcp01  {:opt-label       "1-hour precipitation"
                                                                         :filter          "apcp01"
@@ -604,11 +607,11 @@
                                                               :smoke   {:opt-label    "Smoke density"
                                                                         :filter       "smoke"
                                                                         :units        "\u00b5g/m\u00b3"
-                                                                        :disabled-for #{:hrdps :rdps :gdps :gfs0p125 :gfs0p25 :hybrid :nam-awip12 :nam-conusnest :nbm :cansac-wrf :rtma-ru :ecmwf :nve :nfdrs-constant :nfdrs-variable :cffdrs}}
+                                                                        :disabled-for #{:hrdps :rdps :gdps :gfs0p125 :gfs0p25 :hybrid :hybrid-canada :nam-awip12 :nam-conusnest :nbm :cansac-wrf :rtma-ru :ecmwf :nve :nfdrs-constant :nfdrs-variable :cffdrs}}
                                                               :tcdc    {:opt-label    "Total cloud cover"
                                                                         :filter       "tcdc"
                                                                         :units        "%"
-                                                                        :disabled-for #{:hrdps :rdps :gdps :gfs0p125 :gfs0p25 :hybrid :nam-awip12 :nbm :cansac-wrf :ecmwf :nve :nfdrs-constant :nfdrs-variable :cffdrs}}
+                                                                        :disabled-for #{:hrdps :rdps :gdps :gfs0p125 :gfs0p25 :hybrid :hybrid-canada :nam-awip12 :nbm :cansac-wrf :ecmwf :nve :nfdrs-constant :nfdrs-variable :cffdrs}}
                                                               :bui     {:opt-label "Buildup Index"
                                                                         :filter    "bui"
                                                                         :units     ""
@@ -663,6 +666,10 @@
                                                               " - Blend of HRRR, RRFS, and GFS 0.125\u00B0 to 8 days."
                                                               [:br]
                                                               [:br]
+                                                              [:strong "Hybrid Canada"]
+                                                              " - Blend of HRDPS, RDPS, and GDPS to 8 days."
+                                                              [:br]
+                                                              [:br]
                                                               [:strong "GFS 0.125\u00B0"]
                                                               " - Global Forecast System at 0.125\u00B0 (approx 13 km) resolution to 16 days."
                                                               [:br]
@@ -708,6 +715,9 @@
                                                               :hybrid        {:opt-label    "Hybrid"
                                                                               :filter       "hybrid"
                                                                               :disabled-for #{:tmp :apcptot :smoke :tcdc}}
+                                                              :hybrid-canada {:opt-label    "Hybrid Canada"
+                                                                              :filter       "hybrid-canada"
+                                                                              :disabled-for #{:tmpf :apcptot :ffwi :meq :pign :smoke :tcdc}}
                                                               :gfs0p125      {:opt-label    "GFS 0.125\u00B0"
                                                                               :filter       "gfs0p125"
                                                                               :disabled-for #{:tmp :apcptot :smoke :tcdc}}
@@ -953,7 +963,7 @@
                                                                    :target "_blank"}
                                                                "https://forestobservatory.com"]
                                                               "), © Salo Sciences, Inc. 2020."]
-                                                 :options    {:landfire       {:opt-label    "LANDFIRE 2.4.0/2.3.0"
+                                                 :options    {:landfire       {:opt-label    "LANDFIRE 2.6.0"
                                                                                 :filter       "landfire"
                                                                                 :disabled-for #{:cawfe}}
                                                               :not-applicable {:opt-label   "Not applicable"
