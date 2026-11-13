@@ -1182,7 +1182,7 @@
   "Returns the list of all organizations in the database."
   [_]
   (->> (call-sql "get_all_organizations")
-       (mapv (fn [{:keys [org_uuid org_name org_unique_id geoserver_credentials email_domains subscription_tier auto_add auto_accept archived created_date archived_date]}]
+       (mapv (fn [{:keys [org_uuid org_name org_unique_id geoserver_credentials email_domains subscription_tier auto_add auto_accept archived created_date archived_date number_of_customers]}]
                {:org-uuid              org_uuid
                 :org-name              org_name
                 :org-unique-id         org_unique_id
@@ -1193,7 +1193,8 @@
                 :auto-accept?          auto_accept
                 :archived?             archived
                 :created-date          created_date
-                :archived-date         archived_date}))
+                :archived-date         archived_date
+                :number-of-customers   number_of_customers}))
        (data-response)))
 
 (defn- org-uuid->id
@@ -1239,7 +1240,7 @@
   [session]
   (if-let [user-id (:user-id session)]
     (->> (call-sql "get_user_organization" user-id)
-         (mapv (fn [{:keys [org_uuid org_name org_unique_id geoserver_credentials user_role email_domains auto_add auto_accept]}]
+         (mapv (fn [{:keys [org_uuid org_name org_unique_id geoserver_credentials user_role email_domains auto_add auto_accept number_of_customers]}]
                  {:org-uuid              org_uuid
                   :org-name              org_name
                   :org-unique-id         org_unique_id
@@ -1247,7 +1248,8 @@
                   :role                  user_role
                   :email-domains         email_domains
                   :auto-add?             auto_add
-                  :auto-accept?          auto_accept}))
+                  :auto-accept?          auto_accept
+                  :number-of-customers   number_of_customers}))
          (data-response))
     (data-response "No user is logged in." {:status 403})))
 
@@ -1335,12 +1337,18 @@
        (mapv #(:org_unique_id %))
        (data-response)))
 
-(defn update-org-info [{:keys [user-id]} org-uuid org-name email-domains auto-add? auto-accept?]
+(defn update-org-info [{:keys [user-id]} org-uuid org-name email-domains auto-add? auto-accept? number-of-customers]
   (let [org-id (org-uuid->id org-uuid)]
-    (if (can-admin-org? user-id org-id)
-      (do (call-sql "update_org_info" org-id org-name email-domains auto-add? auto-accept?)
-          (data-response ""))
-      (data-response "You are not authorized to manage this organization." {:status 403}))))
+    (cond
+      (not (nat-int? number-of-customers))
+      (data-response "Number of customers must be positive." {:status 403})
+
+      (not (can-admin-org? user-id org-id))
+      (data-response "You are not authorized to manage this organization." {:status 403})
+
+      :else
+      (do (call-sql "update_org_info" org-id org-name email-domains auto-add? auto-accept? number-of-customers)
+          (data-response "")))))
 
 (defn delete-users
   [{:keys [user-email user-role]} users-to-delete]
@@ -1371,9 +1379,9 @@
   ;; org (here a non-existent uuid) yields a uniform 403 without revealing existence,
   ;; and a malformed (non-uuid) id is rejected the same way -- no 500 and no mutation,
   ;; even for an account_manager, whom the SQL alone would let through.
-  (update-org-info {:user-id 1} "00000000-0000-0000-0000-000000000000" "Hacked" "@hack.com" false false)
+  (update-org-info {:user-id 1} "00000000-0000-0000-0000-000000000000" "Hacked" "@hack.com" false false 0)
   ;=>> {:status 403}
 
-  (update-org-info {:user-id 3} "not-a-uuid" "Hacked" "@hack.com" false false)
+  (update-org-info {:user-id 3} "not-a-uuid" "Hacked" "@hack.com" false false 0)
   ;=>> {:status 403}
   )
