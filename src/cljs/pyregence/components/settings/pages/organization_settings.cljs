@@ -91,7 +91,9 @@
                 auto-accept?
                 unsaved-auto-accept?
                 unsaved-auto-add?
-                unsaved-org-name-support-message]
+                unsaved-org-name-support-message
+                unsaved-number-of-customers
+                number-of-customers]
          :as   org}
         (get-org user-role selected-log org-uuid->org)]
     [:<>
@@ -102,6 +104,16 @@
         :value     unsaved-org-name}
         unsaved-org-name-support-message
         (assoc :support-message unsaved-org-name-support-message))]
+     [input-labeled
+      {:label     "Number of Customers"
+       :type      "number"
+       :min       0
+       :step      1
+       :inputMode "numeric"
+       :on-change #(swap! org-uuid->org assoc-in [org-uuid :unsaved-number-of-customers]
+                          (let [n (.-valueAsNumber (.-target %))]
+                            (when (nat-int? n) n)))
+       :value     unsaved-number-of-customers}]
      [checkbox unsaved-auto-accept? #(swap! org-uuid->org update-in [org-uuid :unsaved-auto-accept?] not) "Auto Accept User as Organization Member"]
      [checkbox unsaved-auto-add? #(swap! org-uuid->org update-in [org-uuid :unsaved-auto-add?] not)  "Auto Add User as Organization Member"]
      [email-domains-cmpt (assoc org :org-uuid->org org-uuid->org)]
@@ -114,6 +126,7 @@
                       :disabled? (and (= unsaved-org-name org-name)
                                       (= unsaved-auto-accept? auto-accept?)
                                       (= unsaved-auto-add? auto-add?)
+                                      (= unsaved-number-of-customers number-of-customers)
                                       (not (some (fn [[_ {:keys [email unsaved-email]}]] (not= email unsaved-email)) og-email->email)))
                       :on-click  (fn []
                                    ;; TODO consider adding a toast on success and something if there is a long delay.
@@ -151,7 +164,8 @@
                                                                             unsaved-org-name
                                                                             unsaved-email-domains
                                                                             unsaved-auto-add?
-                                                                            unsaved-auto-accept?))]
+                                                                            unsaved-auto-accept?
+                                                                            unsaved-number-of-customers))]
                                            ;; TODO if not success case.
                                            (if success
                                              (let [{:keys [org-name email-domains]} (@org-uuid->org org-uuid)]
@@ -168,11 +182,13 @@
                                                                                                              {}
                                                                                                              og-email->email))
                                                             (assoc-in [org-uuid :auto-accept?] unsaved-auto-accept?)
-                                                            (assoc-in [org-uuid :auto-add?] unsaved-auto-add?))))
+                                                            (assoc-in [org-uuid :auto-add?] unsaved-auto-add?)
+                                                            (assoc-in [org-uuid :number-of-customers] unsaved-number-of-customers))))
                                                (let [new-name?        (not= org-name unsaved-org-name)
                                                      new-email?       (not= email-domains unsaved-email-domains)
                                                      new-auto-accept? (not= auto-accept? unsaved-auto-accept?)
-                                                     new-auto-add?    (not= auto-add?    unsaved-auto-add?)]
+                                                     new-auto-add?    (not= auto-add?    unsaved-auto-add?)
+                                                     new-unsaved-noc? (not= number-of-customers unsaved-number-of-customers)]
                                                   ;; TODO instead of three separate toasts maybe it would be better to have one that just said everything?
                                                   ;; TODO these messages could probably be improved.
                                                   ;; TODO these toasts dont work on the second time, e.g change auto-add save you correctly get a toast, change again, and save and you don't.
@@ -180,6 +196,7 @@
                                                  (when new-name? (toast-message! (str "Updated Organization Name ​ " unsaved-org-name)))
                                                  (when new-email? (toast-message! (str "Updated Email Domains​ " unsaved-email-domains)))
                                                  (when new-auto-accept? (toast-message! (str "Updated Auto Accept​ " (if unsaved-auto-accept? "On" "Off"))))
+                                                 (when new-unsaved-noc? (toast-message! (str "Updated Number Of Customers​ " unsaved-number-of-customers)))
                                                  (when new-auto-add? (toast-message! (str "Updated Auto Add​ " (if unsaved-auto-add? "On" "Off"))))))))))))}]]]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

@@ -53,6 +53,8 @@
                                   :cellRenderer "agCheckboxCellRenderer"}
                                  {:field "email-verified" :headerName "Email Verified?" :filter false :width 150 :cellRenderer boolean-renderer}
                                  {:field "last-login-date" :headerName "Last Login Date" :filter "agDateColumnFilter" :width 300}
+                                 {:field "created-at" :headerName "User Created At" :filter "agDateColumnFilter" :width 300}
+                                 {:field "updated-at" :headerName "User Updated At" :filter "agDateColumnFilter" :width 300}
                                  {:field "settings" :headerName "Settings" :filter false :width 200 :autoHeight true
                                   :cellStyle
                                   #js {:whiteSpace "normal" :lineHeight "1.4" :overflow "visible" :textAlign "left"}}])))]}]])
