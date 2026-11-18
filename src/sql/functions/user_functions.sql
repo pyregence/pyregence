@@ -205,7 +205,7 @@ CREATE OR REPLACE FUNCTION set_verification_token(
  RETURNS void AS $$
 
     UPDATE users
-    SET verification_token = _token,
+    SET verification_token = sha256_hex(_token),
         token_expiration = _expiration
     WHERE email = lower_trim(_email)
 
@@ -241,7 +241,7 @@ CREATE OR REPLACE FUNCTION get_user_by_link_token(_email text, _token text)
     SELECT user_uid, email
     FROM users
     WHERE email = lower_trim(_email)
-        AND verification_token = _token
+        AND verification_token = sha256_hex(_token)
         AND token_expiration IS NULL
 
 $$ LANGUAGE SQL;
@@ -292,7 +292,7 @@ CREATE OR REPLACE FUNCTION set_user_password(_email text, _password text, _token
         token_expiration = NULL,
         password_set_date = NOW()
     WHERE email = lower_trim(_email)
-        AND verification_token = _token
+        AND verification_token = sha256_hex(_token)
         AND token_expiration IS NULL  -- links only: a token with an expiry was a mailed code
     RETURNING user_uid
   )
@@ -354,7 +354,7 @@ CREATE OR REPLACE FUNCTION verify_user_email(_email text, _token text)
         verification_token = NULL,
         token_expiration = NULL
     WHERE email = lower_trim(_email)
-        AND verification_token = _token
+        AND verification_token = sha256_hex(_token)
         AND token_expiration IS NULL  -- links only: a token with an expiry was a mailed code
     RETURNING user_uid
   )
