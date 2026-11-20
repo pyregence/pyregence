@@ -24,6 +24,7 @@
             [pyregence.clock                    :as clock]
             [pyregence.datatypes.idle-window    :as idle-window]
             [pyregence.datatypes.session        :as session]
+            [pyregence.sentry                   :as sentry]
             [pyregence.session-watch            :as session-watch]
             [pyregence.wiring                   :as wiring]
             [pyregence.state                    :as !]
@@ -86,6 +87,7 @@
                         (reset! original-session (js->clj session :keywordize-keys true))
                         @original-session)
         merged-params (merge clj-params clj-session)]
+    (sentry/init! (:sentry clj-session))
     (reset! !/usage-terms-and-conditions-date (get clj-session :usage-terms-and-conditions-date))
     (reset! !/feature-flags                   (get clj-session :features))
     (reset! !/geoserver-urls                  (get clj-session :geoserver))
