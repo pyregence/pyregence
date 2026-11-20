@@ -40,6 +40,16 @@ points at the nginx proxy for [[https://weathercams.faa.gov/][FAA WeatherCams]],
 which holds the FAA API token; omit it to disable FAA cameras. You should change the
 ~:pyr-auth-token~ field to a unique string that's at least 16 characters long.
 
+*** Sentry Monitoring
+
+Sentry error monitoring is optional and disabled when no DSN is configured. Set ~:dsn~
+(backend) and/or ~:frontend-dsn~ (browser) under ~:pyregence.sentry/config~ in ~config.edn~,
+or override with ~SENTRY_DSN~, ~SENTRY_FRONTEND_DSN~, ~SENTRY_ENVIRONMENT~, and ~SENTRY_RELEASE~.
+Default personal data collection is disabled (~sendDefaultPii: false~), so user emails,
+IP addresses, cookies, and user IDs are never sent to Sentry. Production UberJAR builds
+move the chained ClojureScript/Webpack sourcemap to ~sourcemaps/app.js.map~ (excluded
+from the JAR) for upload to Sentry.
+
 ** PostgreSQL Database Setup
 
 *PostgreSQL* needs to be installed on the machine that will be hosting
