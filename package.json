@@ -1,5 +1,6 @@
 {
   "dependencies": {
+    "@sentry/browser": "^11.14.0",
     "ag-grid-community": "^34.3.1",
     "ag-grid-react": "^34.3.1",
     "mapbox-gl": "^3.9.3",
@@ -8,6 +9,7 @@
     "vega-embed": "^6.29.0"
   },
   "devDependencies": {
+    "source-map-loader": "^5.0.0",
     "webpack": "^5.91.0",
     "webpack-cli": "^5.1.4"
   },
