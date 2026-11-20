@@ -1,7 +1,11 @@
 (ns pyregence.components.two-fa
   "Shared components for two-factor authentication UI"
-  (:require [herb.core                       :refer [<class]]
+  (:require [clojure.string                  :as str]
+            [herb.core                       :refer [<class]]
+            [pyregence.components.buttons    :as buttons]
             [pyregence.components.login-menu :refer [login-menu]]
+            [pyregence.components.messaging  :refer [toast-message!]]
+            [pyregence.components.utils      :as utils]
             [pyregence.styles                :as $]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -116,3 +120,47 @@
                   :margin         "0"}}
       title]
      (into [:<>] children)]]])
+
+(defn code-rejection
+  "What to tell someone whose code check failed with `status`."
+  [status]
+  (case status
+    ;; Waiting is the only remedy: a password reset clears the login count, not this one.
+    429 "Too many incorrect codes. Please wait 5 minutes before trying again."
+    403 "Invalid verification code. Please try again."
+    "Something went wrong. Please try again."))
+
+(defn- code-prompt [{:keys [auth-method user-email on-resend]}]
+  (if (= :totp auth-method)
+    [:<>
+     [:p {:style {:margin-bottom "0.5rem"}}
+      "Enter the 6-digit code from your authenticator app."]
+     [:p {:style {:color       "#666"
+                  :font-size   "0.9rem"
+                  :margin-top  "0.5rem"}}
+      "You can also use one of your 8-character backup codes."]]
+    [:<>
+     [:p {:style {:margin-bottom "0.5rem"}}
+      [:span
+       "Enter the verification code sent to "
+       [:span {:style {:font-weight "bold"}} user-email]
+       "."]]
+     [:a {:href     "#"
+          :on-click on-resend
+          :style    {:color      ($/color-picker :link-color)
+                     :font-size  "0.9rem"
+                     :margin-top "0.5rem"}}
+      "Resend verification code"]]))
+
+(defn code-entry
+  "The code input, its Verify button and what to type there, for `auth-method` :totp or :email."
+  [{:keys [code on-verify] :as opts}]
+  [:<>
+   [utils/input-labeled {:label     "Verification Code"
+                         :value     @code
+                         :on-change #(reset! code (-> % .-target .-value))}]
+   [buttons/primary {:text     "Verify"
+                     :on-click #(if (str/blank? @code)
+                                  (toast-message! "Please enter the verification code.")
+                                  (on-verify))}]
+   [code-prompt opts]])

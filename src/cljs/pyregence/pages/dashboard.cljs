@@ -106,20 +106,20 @@
                                 message
                                 created-at
                                 updated-at
-                                dps-request
+                                request
                                 model
                                 job-log]}]
-  (let [common-args   (get-in dps-request [:script-args :common-args])
+  (let [common-args   (get-in request [:script-args :common-args])
         ;; WORKAROUND for sig3 requests. CAWFE arguments are flat, the others nested.
         lon           (or (:lon common-args)
-                          (get-in dps-request [:pyrc_simulation_span :pyrc_simspan_center_lon])
-                          (:center_lon_deg dps-request))
+                          (get-in request [:pyrc_simulation_span :pyrc_simspan_center_lon])
+                          (:center_lon_deg request))
         lat           (or (:lat common-args)
-                          (get-in dps-request [:pyrc_simulation_span :pyrc_simspan_center_lat])
-                          (:center_lat_deg dps-request))
+                          (get-in request [:pyrc_simulation_span :pyrc_simspan_center_lat])
+                          (:center_lat_deg request))
         ignition-time (or (:ignition-time common-args)
-                          (some-> (or (get-in dps-request [:pyrc_ignition :pyrc_ignition_epoch_s])
-                                      (:pyrc_ignition_epoch_s dps-request))
+                          (some-> (or (get-in request [:pyrc_ignition :pyrc_ignition_epoch_s])
+                                      (:pyrc_ignition_epoch_s request))
                                   (u-time/epoch-s->utc-date)))]
     [:tr
      [:td (str match-job-unique-id)] ; "Job ID"

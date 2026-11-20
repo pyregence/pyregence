@@ -108,9 +108,11 @@
         body          (messages/two-fa-email fmt email user-name token expiry-mins)
         email-config  (get-security-email-config)  ; Get security config
         ;; Call send-mail with security config
-        result        (send-mail email nil "PyreCast Security" "PyreCast Login Verification Code" body fmt email-config)]
-    (call-sql "set_verification_token" {:log? false} email token expiration)
-    (data-response email {:status (when-not (= :SUCCESS (:error result)) 400)})))
+        result        (send-mail email nil "PyreCast Security" "PyreCast Login Verification Code" body fmt email-config)
+        sent?         (= :SUCCESS (:error result))]
+    ;; Only a code that went out replaces the last one, which a failed send would otherwise kill.
+    (when sent? (call-sql "set_emailed_code" {:log? false} email token expiration))
+    (data-response email {:status (when-not sent? 400)})))
 
 (defn- send-match-drop-email! [email match-drop-args]
   (let [user-name (sql-primitive (call-sql "get_user_name_by_email" email))
@@ -169,7 +171,7 @@
     (println body)
     (println "=====================================")
 
-    (call-sql "set_verification_token" {:log? false} email token expiration)
+    (call-sql "set_emailed_code" {:log? false} email token expiration)
     (data-response email)))
 
 (defn send-email!

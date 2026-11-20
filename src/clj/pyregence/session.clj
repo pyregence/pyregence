@@ -100,24 +100,51 @@
   carried into this state would make page rendering discard the 2FA challenge."
   [:marketplace-signup])
 
+(defn- two-factor-deadline [now]
+  (+ now (timeout-ms :pyregence.auth/two-factor-window-min default-two-factor-window-min)))
+
 (defn awaiting-2fa
   "A fresh pre-authentication session owing a second factor from `user`, with its
   own fuse. Marketplace signup context rides along until login finishes; a prior
-  authenticated session does not."
-  [session {:keys [user_id user_email]} now]
+  authenticated session does not. `password-set-ms` names the password the login
+  started against, so a reset meanwhile ends it."
+  [session {:keys [user_id user_email]} password-set-ms now]
   (assoc (select-keys session pre-authentication-keys) :pending-2fa
-         {:user-id    user_id
-          :user-email user_email
-          :expires-at (+ now (timeout-ms :pyregence.auth/two-factor-window-min
-                                         default-two-factor-window-min))}))
+         {:user-id         user_id
+          :user-email      user_email
+          :password-set-ms password-set-ms
+          :expires-at      (two-factor-deadline now)}))
+
+(defn- live-marker
+  "The `ks` of `marker` while it names a user and its window is open, else nil. Absent, incomplete
+   and stale markers all read alike."
+  [marker ks now]
+  (let [{:keys [user-id user-email expires-at]} marker]
+    (when (and user-id user-email expires-at (< now expires-at))
+      (select-keys marker ks))))
 
 (defn pending-user
-  "Who this session is still owed a second factor for, or nil. Absent, incomplete and stale markers
-   all read alike, so what comes back is a whole user or nothing."
+  "Who this session is still owed a second factor for, and the password they started against, or nil."
   [session now]
-  (let [{:keys [user-id user-email expires-at]} (:pending-2fa session)]
-    (when (and user-id user-email expires-at (< now expires-at))
-      {:user-id user-id :user-email user-email})))
+  (live-marker (:pending-2fa session) [:user-id :user-email :password-set-ms] now))
+
+;; The reset marker rides on the current session: its login lasts until the new password logs in,
+;; and a logout mid-reset means passing the code step again.
+
+(defn cleared-for-reset
+  "`session` in which `user` passed the second factor for a reset while their password was the one
+  set at `password-set-ms`, good for one code window."
+  [session {:keys [user-id user-email]} password-set-ms now]
+  (assoc session :reset-cleared {:user-id         user-id
+                                 :user-email      user-email
+                                 :password-set-ms password-set-ms
+                                 :expires-at      (two-factor-deadline now)}))
+
+(defn reset-clearance
+  "Who passed the second factor for a reset in this session, and when their password was set then, or
+   nil once the window closes."
+  [session now]
+  (live-marker (:reset-cleared session) [:user-id :user-email :password-set-ms] now))
 
 (defn ended?
   "Whether a session that once existed is one PyreCast no longer honours -- idled
@@ -152,8 +179,9 @@
 
    `:pending-2fa` is on it for the same reason and not a second one: the marker
    carries a user id of its own (PYR1-1615), so a page told nothing about
-   `:user-id` while being handed `:pending-2fa` would have been told anyway."
-  [:user-id :organization-id :pending-2fa])
+   `:user-id` while being handed `:pending-2fa` would have been told anyway. The
+   reset marker carries one too."
+  [:user-id :organization-id :pending-2fa :reset-cleared])
 
 (defn- page-facing
   "A session shaped the way a page receives one: PyreCast's own PKs out, and in
@@ -258,8 +286,9 @@
   ;=> [false true false]
 
   ;; 15 min = 900000 ms, and the rest of the session rides along.
-  (awaiting-2fa {:marketplace-signup {:org "acme"}} {:user_id 1 :user_email "a@b.c"} 1000)
-  ;=> {:marketplace-signup {:org "acme"} :pending-2fa {:user-id 1 :user-email "a@b.c" :expires-at 901000}}
+  (awaiting-2fa {:marketplace-signup {:org "acme"}} {:user_id 1 :user_email "a@b.c"} 500 1000)
+  ;=> {:marketplace-signup {:org "acme"}
+  ;    :pending-2fa {:user-id 1 :user-email "a@b.c" :password-set-ms 500 :expires-at 901000}}
 
   ;; Fresh, then exactly at the fuse, then each field missing in turn, then nothing at all.
   (let [marked {:pending-2fa {:user-id 1 :user-email "a@b.c" :expires-at 2000}}]
@@ -271,6 +300,13 @@
      (pending-user {} 1999)
      (pending-user nil 1999)])
   ;=> [{:user-id 1 :user-email "a@b.c"} nil nil nil nil nil nil]
+
+  ;; The reset marker keeps the login and expires with its window.
+  (let [cleared (cleared-for-reset {:user-id 7} {:user-id 1 :user-email "a@b.c"} 500 1000)]
+    [(set (keys cleared))
+     (reset-clearance cleared 900999)
+     (reset-clearance cleared 901000)])
+  ;=> [#{:user-id :reset-cleared} {:user-id 1 :user-email "a@b.c" :password-set-ms 500} nil]
 
   ;; Logout revokes without timing out, so the clock alone cannot catch it.
   (let [now (System/currentTimeMillis)]
@@ -322,11 +358,12 @@
   ;=> [true false false]
 
   ;; The PKs never reach a browser (PYR1-1512 enumeration hardening), and
-  ;; neither does the 2FA marker, which carries one of its own (PYR1-1615).
+  ;; neither do the 2FA and reset markers, which carry one of their own (PYR1-1615).
   (with-redefs [call-sql (fn [& _] [{:get_user_session_invalidated_at 0}])]
     (let [now (System/currentTimeMillis)]
       (-> {:user-id 1 :organization-id 7 :created-at now :last-active now
-           :pending-2fa {:user-id 1 :user-email "a@b.c" :expires-at (+ now 1000)}}
+           :pending-2fa {:user-id 1 :user-email "a@b.c" :expires-at (+ now 1000)}
+           :reset-cleared {:user-id 1}}
           (as-a-page-may-see-it)
           (select-keys internal-keys))))
   ;=> {}

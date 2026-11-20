@@ -56,7 +56,8 @@ CREATE OR REPLACE FUNCTION get_all_organizations()
   auto_accept           boolean,
   archived              boolean,
   created_date          date,
-  archived_date         date
+  archived_date         date,
+  number_of_customers   integer
  ) AS $$
 
   SELECT
@@ -70,7 +71,9 @@ CREATE OR REPLACE FUNCTION get_all_organizations()
     o.auto_accept                    AS auto_accept,
     o.archived                       AS archived,
     o.created_date::date             AS created_date,
-    o.archived_date::date            AS archived_date
+    o.archived_date::date            AS archived_date,
+    o.number_of_customers            AS number_of_customers
+
   FROM organizations o
   ORDER BY o.organization_uid;
 
@@ -99,7 +102,8 @@ CREATE OR REPLACE FUNCTION get_user_organization(_user_id integer)
     user_role             user_role,
     email_domains         text,
     auto_add              boolean,
-    auto_accept           boolean
+    auto_accept           boolean,
+    number_of_customers   integer
  ) AS $$
 
     -- Browser-facing: return the unpredictable organization_uuid as org_uuid, never
@@ -112,7 +116,8 @@ CREATE OR REPLACE FUNCTION get_user_organization(_user_id integer)
         u.user_role,
         o.email_domains,
         o.auto_add,
-        o.auto_accept
+        o.auto_accept,
+        o.number_of_customers
     FROM users u
     JOIN organizations o ON u.organization_rid = o.organization_uid
     WHERE u.user_uid = _user_id
@@ -133,18 +138,20 @@ RETURNS TABLE (org_unique_id text) AS $$
 $$ LANGUAGE SQL;
 
 CREATE OR REPLACE FUNCTION update_org_info(
-    _org_id           integer,
-    _org_name         text,
-    _email_domains    text,
-    _auto_add         boolean,
-    _auto_accept      boolean
+    _org_id              integer,
+    _org_name            text,
+    _email_domains       text,
+    _auto_add            boolean,
+    _auto_accept         boolean,
+    _number_of_customers integer
  ) RETURNS void AS $$
 
     UPDATE organizations
     SET org_name = _org_name,
         email_domains = _email_domains,
         auto_add = _auto_add,
-        auto_accept = _auto_accept
+        auto_accept = _auto_accept,
+        number_of_customers = _number_of_customers
     WHERE
         organization_uid = _org_id
 
@@ -428,4 +435,3 @@ BEGIN
     RETURN _org_id;
 END;
 $$ LANGUAGE plpgsql;
-

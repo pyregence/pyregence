@@ -72,6 +72,11 @@
 (defn- url-encode [s]
   (URLEncoder/encode s "UTF-8"))
 
+(defn- reset-password-path
+  "The reset page's path for `email` and its emailed `token`."
+  [email token]
+  (str "/reset-password?email=" (url-encode email) "&verification-token=" (url-encode token)))
+
 (defn- logo-url []
   "URL to email header logo (uses production base URL)"
   (str (get-config :triangulum.email/base-url) "/images/email/logo.png"))
@@ -242,7 +247,7 @@
 (defmethod password-reset-email :text
   [_ base-url email user-name verification-token]
   (let [greeting  (or user-name email)
-        reset-url (str base-url "/reset-password?email=" (url-encode email) "&verification-token=" (url-encode verification-token))]
+        reset-url (str base-url (reset-password-path email verification-token))]
     (str "Hi " greeting ",\n\n"
          "  You recently requested to reset your password for your PyreCast account. "
          "Use the link below to reset it.\n\n"
@@ -257,7 +262,7 @@
 (defmethod password-reset-email :html
   [_ base-url email user-name verification-token]
   (let [greeting (or user-name email)
-        reset-url (str base-url "/reset-password?email=" (url-encode email) "&verification-token=" (url-encode verification-token))]
+        reset-url (str base-url (reset-password-path email verification-token))]
     (html-wrapper
      [:div
       [:h2 {:style (:h2 common-styles)}
@@ -288,8 +293,7 @@
 
 (defmethod invite-email :text
   [_ base-url email _user-name verification-token org]
-  (let [action-url (str base-url "/reset-password?email=" (url-encode email)
-                        "&verification-token=" (url-encode verification-token))
+  (let [action-url (str base-url (reset-password-path email verification-token))
         login-url  (str base-url "/login")]
     (str "Welcome to PyreCast!\n\n"
          (if org
@@ -306,8 +310,7 @@
 
 (defmethod invite-email :html
   [_ base-url email _user-name verification-token org]
-  (let [action-url (str base-url "/reset-password?email=" (url-encode email)
-                        "&verification-token=" (url-encode verification-token))
+  (let [action-url (str base-url (reset-password-path email verification-token))
         login-url  (str base-url "/login")]
     (html-wrapper
      [:div

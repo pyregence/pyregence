@@ -27,8 +27,11 @@
 (def ^:private totp-secret   "JBSWY3DPEHPK3PXP")
 (def ^:private backup-code   "TESTCODE")
 (def ^:private wrong-code    "wrong") ; never numeric, so never the live TOTP code
+(def ^:private email-code    "246810")
+(def ^:private password-set-ms 1000) ; when the account's password was last set
 (def ^:private link-token    "emailed-token")
 (def ^:private new-password  "New password 1A")
+(def ^:private code-waiting? (atom false)) ; whether a mailed code waits in the database
 
 (def ^:private user-row
   {:user_id user-id :user_email account :user_role "member"})
@@ -51,8 +54,13 @@
       "use_backup_code"    [{:use_backup_code (and (= (first args) user-id)
                                                    (= (second args) backup-code))}]
       "verify_user_login"  (when (= (second args) password) [user-row])
+      "get_user_by_link_token" (when (= (second args) link-token) [user-row])
       "set_user_password"  (when (= (nth args 2) link-token) [user-row])
       "verify_user_email"  (when (= (second args) link-token) [user-row])
+      "verify_user_2fa"    (when (= (second args) email-code) [user-row])
+      "get_password_set_ms" [{:get_password_set_ms password-set-ms}]
+      "emailed_code_pending" [{:emailed_code_pending @code-waiting?}]
+      "set_user_password_by_id" (when (= [user-id password-set-ms] [(first args) (nth args 2)]) [user-row])
       nil)))
 
 (use-fixtures :each
@@ -61,6 +69,7 @@
   (fn [run]
     (clock/install! (clock/->SystemClock))
     (reset! throttle/attempts {})
+    (reset! code-waiting? false)
     (with-redefs [database/call-sql            fake-call-sql
                   config/get-config            (fn [& _] nil)
                   marketplace/complete-signup! (fn [& _] nil)]
@@ -70,7 +79,7 @@
   "A session as `log-in` leaves it once a password has checked out."
   ([] (marker user-id account))
   ([id email]
-   (session/awaiting-2fa {} {:user_id id :user_email email} (clock/now))))
+   (session/awaiting-2fa {} {:user_id id :user_email email} password-set-ms (clock/now))))
 
 (defn- verify
   "The status `verify-2fa` answers with. The email is always `account`, since the route ignores it."
@@ -158,6 +167,15 @@
   {"a password reset"      #(authentication/set-user-password signed-in-elsewhere account new-password %)
    "an email verification" #(authentication/verify-user-email signed-in-elsewhere account %)})
 
+(defn- with-mail
+  "Calls `f` with an atom of the mail sent, recorded instead of sent. A mailed code then waits."
+  [f]
+  (let [sent (atom [])]
+    (with-redefs [email/send-email! (fn [_ to kind]
+                                      (swap! sent conj [to kind])
+                                      (when (= :2fa kind) (reset! code-waiting? true)))]
+      (f sent))))
+
 (defn- with-second-factor
   "Calls `f` with every account's second factor set to `method` (nil for none), and the SQL calls
    made recorded, each as the function's name and its arguments."
@@ -177,18 +195,16 @@
         :when (and (= "set_user_session_invalidated_at" sql-fn) (= user-id id))]
     at))
 
-(deftest an-emailed-link-owes-the-second-factor
-  (doseq [[label follow] emailed-links]
-    (let [response (follow link-token)]
-      (testing (str label " leaves only the marker, as log-in does")
-        (is (= 200 (:status response)) label)
-        (is (= #{:pending-2fa} (set (keys (:session response)))) label)
-        (is (= user-id (get-in response [:session :pending-2fa :user-id])) label))
-      (testing (str label " sends the browser to the code page, the email encoded")
-        (is (= {:second-factor-url "/verify-2fa?email=throttle-user%40example.test&method=totp"} (:body response))
-            label))
-      (testing (str label " is completed by the second factor")
-        (is (= 200 (verify (:session response) (valid-code))) label)))))
+(deftest an-email-verification-owes-the-second-factor
+  (let [response (authentication/verify-user-email signed-in-elsewhere account link-token)]
+    (testing "it leaves only the marker, as log-in does"
+      (is (= 200 (:status response)))
+      (is (= #{:pending-2fa} (set (keys (:session response)))))
+      (is (= user-id (get-in response [:session :pending-2fa :user-id]))))
+    (testing "it sends the browser to the code page, the email encoded"
+      (is (= {:second-factor-url "/verify-2fa?email=throttle-user%40example.test&method=totp"} (:body response))))
+    (testing "it is completed by the second factor"
+      (is (= 200 (verify (:session response) (valid-code)))))))
 
 (deftest an-emailed-link-logs-in-an-account-without-a-second-factor
   ;; A clock that ticks on every read, so a cutoff stamped after the session would postdate it.
@@ -207,40 +223,33 @@
 (deftest a-wrong-link-mints-nothing
   (doseq [[label follow] emailed-links]
     (let [response (follow "wrong-token")]
-      (is (= 403 (:status response)) label)
+      (is (= ({"a password reset" 410} label 403) (:status response)) label)
       (is (nil? (:session response)) label))))
 
-(deftest a-reset-ends-old-sessions-before-the-second-factor
-  (with-second-factor :totp
-    (fn [calls]
-      (let [before (clock/now)]
-        (authentication/set-user-password {} account new-password link-token)
-        ;; A zero or stale stamp would end nothing.
-        (is (some #(>= % before) (cutoffs @calls))
-            "a new password logs out every old session of the account, even before the code")))))
+(deftest log-in-and-verify-mail-the-code-to-the-account
+  ;; Typed in capitals, so a code sent to the typed address would show.
+  (let [log-in (fn [_] (authentication/log-in {} (str/upper-case account) password))]
+    (with-mail
+      (fn [sent]
+        (with-second-factor :email
+          (fn [_]
+            (doseq [[label follow] {"an email verification" (emailed-links "an email verification")
+                                    "a log-in"              log-in}]
+              (let [response (follow link-token)]
+                (is (= #{:pending-2fa} (set (keys (:session response)))) label)
+                (is (= "/verify-2fa?email=throttle-user%40example.test&method=email"
+                       (get-in response [:body :second-factor-url]))
+                    label)))))
+        (is (= (repeat 2 [account :2fa]) @sent))))))
 
-(deftest log-in-reset-and-verify-mail-the-code-to-the-account
-  (let [sent   (atom [])
-        ;; Typed in capitals, so a code sent to the typed address would show.
-        log-in (fn [_] (authentication/log-in {} (str/upper-case account) password))]
-    (with-redefs [email/send-email! (fn [_ to kind] (swap! sent conj [to kind]))]
-      (with-second-factor :email
-        (fn [_]
-          (doseq [[label follow] (assoc emailed-links "a log-in" log-in)]
-            (let [response (follow link-token)]
-              (is (= #{:pending-2fa} (set (keys (:session response)))) label)
-              (is (= "/verify-2fa?email=throttle-user%40example.test&method=email"
-                     (get-in response [:body :second-factor-url]))
-                  label))))))
-    (is (= (repeat 3 [account :2fa]) @sent))))
-
-(deftest a-failed-code-email-still-leaves-the-marker
+(deftest a-failed-code-email-leaves-a-way-to-resend
   (with-redefs [email/send-email! (fn [& _] (throw (ex-info "SMTP down" {})))]
     (with-second-factor :email
       (fn [_]
-        (let [response (authentication/set-user-password {} account new-password link-token)]
-          (is (= 200 (:status response)) "the password changed, and the page can resend the code")
-          (is (= user-id (get-in response [:session :pending-2fa :user-id]))))))))
+        (testing "a log-in still leaves its marker"
+          (is (= user-id (get-in (authentication/log-in {} account password) [:session :pending-2fa :user-id]))))
+        (testing "a reset says the send failed, so the page offers it again"
+          (is (= 502 (:status (authentication/send-reset-code {} account link-token)))))))))
 
 (deftest marketplace-sso-links-the-code-page-with-the-email-encoded
   (with-redefs [marketplace/sso-login (fn [_] {:user    (assoc user-row :user_email "first+last@example.test")
@@ -249,14 +258,14 @@
            (get-in (authentication/marketplace-sso-login {}) [:headers "Location"])))))
 
 (deftest marketplace-sso-mails-the-code-for-emailed-codes
-  (let [sent (atom [])]
-    (with-redefs [email/send-email!     (fn [_ to kind] (swap! sent conj [to kind]))
-                  marketplace/sso-login (fn [_] {:user user-row :session {}})]
-      (with-second-factor :email
-        (fn [_]
-          (is (= "/verify-2fa?email=throttle-user%40example.test&method=email"
-                 (get-in (authentication/marketplace-sso-login {}) [:headers "Location"]))))))
-    (is (= [[account :2fa]] @sent))))
+  (with-mail
+    (fn [sent]
+      (with-redefs [marketplace/sso-login (fn [_] {:user user-row :session {}})]
+        (with-second-factor :email
+          (fn [_]
+            (is (= "/verify-2fa?email=throttle-user%40example.test&method=email"
+                   (get-in (authentication/marketplace-sso-login {}) [:headers "Location"]))))))
+      (is (= [[account :2fa]] @sent)))))
 
 (deftest the-code-window-runs-on-the-app-clock
   (let [t (atom 0)]
@@ -270,6 +279,144 @@
             (swap! t + (* 16 60 1000))
             (is (= 401 (verify session (valid-code)))))))
       (finally (clock/install! (clock/->SystemClock))))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; A reset asks for the second factor before the new password
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn- check-reset-link
+  "The answer to opening the reset link in a browser holding `session`."
+  [session]
+  (authentication/check-reset-link session account link-token))
+
+(defn- send-code [session] (authentication/send-reset-code session account link-token))
+
+(defn- enter-code [session code] (authentication/verify-reset-code session account link-token code))
+
+(deftest opening-a-reset-link-changes-nothing
+  (with-mail
+    (fn [sent]
+      (doseq [[method step] [[:totp  {:step :code :method :totp :sent? false}]
+                             [:email {:step :code :method :email :sent? false}]
+                             [nil    {:step :form}]]]
+        (with-second-factor method
+          (fn [_]
+            (let [response (check-reset-link signed-in-elsewhere)]
+              (is (= step (:body response)) (str method))
+              (is (not (contains? response :session)) (str method " leaves the session alone"))))))
+      (is (empty? @sent)))))
+
+(deftest a-wrong-reset-link-says-nothing-about-the-account
+  (doseq [[label response] [["opening it"      (authentication/check-reset-link {} account "wrong-token")]
+                            ["asking for code" (authentication/send-reset-code {} account "wrong-token")]
+                            ["entering a code" (authentication/verify-reset-code {} account "wrong-token" (valid-code))]
+                            ["setting it"      (authentication/set-user-password {} account new-password "wrong-token")]]]
+    (is (= 410 (:status response)) label)
+    (is (nil? (:session response)) label)))
+
+(deftest an-authenticator-code-opens-the-form-and-keeps-the-login
+  (let [response (enter-code signed-in-elsewhere (valid-code))]
+    (is (= {:step :form} (:body response)))
+    (testing "the login already on this browser stays until the password changes"
+      (is (= other-user-id (get-in response [:session :user-id]))))
+    (testing "and the link opens the form from then on"
+      (is (= {:step :form} (:body (check-reset-link (:session response))))))))
+
+(deftest an-emailed-code-is-mailed-only-when-asked
+  (with-mail
+    (fn [sent]
+      (with-second-factor :email
+        (fn [_]
+          (let [asked (send-code signed-in-elsewhere)]
+            (is (= {:sent? true} (:body asked)))
+            (is (= 200 (:status asked)))
+            (is (= [[account :2fa]] @sent))
+            (is (not (contains? asked :session)) "the login stays")
+            (testing "the link, left as it was, opens anywhere at the code entry"
+              (is (= {:step :code :method :email :sent? true} (:body (check-reset-link {})))))
+            (testing "a resend still works"
+              (is (= {:sent? true} (:body (send-code {})))))
+            (testing "and the mailed code opens the form in any browser"
+              (is (= {:step :form} (:body (enter-code {} email-code)))))))))))
+
+(deftest an-authenticator-account-gets-no-mailed-code
+  (with-mail
+    (fn [sent]
+      (is (= 410 (:status (send-code {}))))
+      (is (empty? @sent)))))
+
+(deftest a-wrong-reset-code-opens-nothing
+  (let [response (enter-code {} wrong-code)]
+    (is (= 403 (:status response)))
+    (is (nil? (:session response)))))
+
+(deftest reset-codes-spend-the-second-factor-budget
+  (is (= (repeat 6 403) (mapv (fn [_] (:status (enter-code {} wrong-code))) (range 6))))
+  (is (= 429 (:status (enter-code {} (valid-code))))))
+
+(deftest a-reset-without-the-code-leaves-the-password-alone
+  (with-mail
+    (fn [_]
+      (doseq [method [:totp :email]]
+        (with-second-factor method
+          (fn [calls]
+            (doseq [[label session] [["no code entered"   {}]
+                                     ["a code only asked" (do (send-code {}) {})]
+                                     ["code passed for another account"
+                                      (session/cleared-for-reset {} {:user-id other-user-id :user-email other-account}
+                                                                 password-set-ms (clock/now))]]]
+              (let [response (authentication/set-user-password session account new-password link-token)]
+                (is (= 403 (:status response)) (str method " " label))
+                (is (nil? (:session response)) (str method " " label))))
+            (is (not-any? #(#{"set_user_password" "set_user_password_by_id"} (first %)) @calls)
+                (str method ": no password was saved"))))))))
+
+(deftest only-an-emailed-code-account-hears-a-code-waits
+  (reset! code-waiting? true)
+  (doseq [[method sent?] [[:email true] [:totp false]]]
+    (with-second-factor method
+      (fn [_]
+        (is (= sent? (:sent? (:body (check-reset-link {})))) (str method))))))
+
+(deftest the-code-lets-the-new-password-log-the-user-in
+  (with-second-factor :totp
+    (fn [calls]
+      (let [before   (clock/now)
+            response (authentication/set-user-password (:session (enter-code {} (valid-code))) account new-password link-token)]
+        (is (= user-id (get-in response [:session :user-id])))
+        (is (some #{["set_user_password_by_id" {:log? false} user-id new-password password-set-ms]} @calls)
+            "the database sets it only while the password is the one the code was entered against")
+        (is (some #(>= % before) (cutoffs @calls)) "old sessions of the account end")))))
+
+(deftest a-passed-code-lasts-the-code-window
+  (let [t (atom 0)]
+    (clock/install! (reify clock/IClock (now-ms [_] @t)))
+    (try
+      (let [cleared (:session (enter-code {} (valid-code)))]
+        (swap! t + (* 16 60 1000))
+        (is (= 403 (:status (authentication/set-user-password cleared account new-password link-token)))))
+      (finally (clock/install! (clock/->SystemClock))))))
+
+(deftest a-code-login-ends-when-the-password-changes
+  (let [marked (:session (authentication/log-in {} account password))]
+    (with-redefs [database/call-sql (fn [sql-fn & args]
+                                      (if (= sql-fn "get_password_set_ms")
+                                        [{:get_password_set_ms (inc password-set-ms)}]
+                                        (apply fake-call-sql sql-fn args)))]
+      (is (= 401 (verify marked (valid-code))) "a reset after the password step ends it"))
+    (is (= 200 (verify marked (valid-code))) "otherwise the code finishes it")))
+
+(deftest a-reset-while-the-code-is-mailed-still-ends-the-login
+  (let [stamp (atom password-set-ms)]
+    (with-redefs [email/send-email! (fn [& _] (swap! stamp inc))]
+      (with-second-factor :email
+        (fn [_]
+          (with-redefs [database/call-sql (let [call-sql database/call-sql]
+                                            (fn [sql-fn & args]
+                                              (if (= sql-fn "get_password_set_ms")
+                                                [{:get_password_set_ms @stamp}]
+                                                (apply call-sql sql-fn args))))]
+            (is (= 401 (verify (:session (authentication/log-in {} account password)) email-code)))))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; The budget

@@ -17,11 +17,8 @@ CREATE TABLE match_jobs (
     message             text,
     job_log             text DEFAULT '',
     elmfire_done        boolean DEFAULT FALSE,
-    gridfire_done       boolean DEFAULT FALSE,
-    dps_request         jsonb,
-    elmfire_request     jsonb,
-    gridfire_request    jsonb,
-    geosync_request     jsonb,
+    pyretechnics_done   boolean DEFAULT FALSE,
+    request             jsonb,
     geoserver_workspace text,
     model               text DEFAULT 'standard'
 );

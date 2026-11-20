@@ -15,9 +15,8 @@ CREATE OR REPLACE FUNCTION get_match_job(_match_job_id integer)
     message             text,
     job_log             text,
     elmfire_done        boolean,
-    dps_request         text,
-    elmfire_request     text,
-    geosync_request     text,
+    pyretechnics_done   boolean,
+    request             text,
     geoserver_workspace text,
     model               text
  ) AS $$
@@ -33,9 +32,8 @@ CREATE OR REPLACE FUNCTION get_match_job(_match_job_id integer)
         message,
         job_log,
         elmfire_done,
-        dps_request::text,
-        elmfire_request::text,
-        geosync_request::text,
+        pyretechnics_done,
+        request::text,
         geoserver_workspace,
         model
     FROM match_jobs
@@ -57,9 +55,8 @@ CREATE OR REPLACE FUNCTION get_match_job_by_uuid(_match_job_uuid uuid)
     message             text,
     job_log             text,
     elmfire_done        boolean,
-    dps_request         text,
-    elmfire_request     text,
-    geosync_request     text,
+    pyretechnics_done   boolean,
+    request             text,
     geoserver_workspace text,
     model               text
  ) AS $$
@@ -75,9 +72,8 @@ CREATE OR REPLACE FUNCTION get_match_job_by_uuid(_match_job_uuid uuid)
         message,
         job_log,
         elmfire_done,
-        dps_request::text,
-        elmfire_request::text,
-        geosync_request::text,
+        pyretechnics_done,
+        request::text,
         geoserver_workspace,
         model
     FROM match_jobs
@@ -101,9 +97,8 @@ CREATE OR REPLACE FUNCTION get_user_match_jobs(_user_id integer)
     message             text,
     job_log             text,
     elmfire_done        boolean,
-    dps_request         text,
-    elmfire_request     text,
-    geosync_request     text,
+    pyretechnics_done   boolean,
+    request             text,
     geoserver_workspace text,
     model               text
  ) AS $$
@@ -118,9 +113,8 @@ CREATE OR REPLACE FUNCTION get_user_match_jobs(_user_id integer)
         message,
         job_log,
         elmfire_done,
-        dps_request::text,
-        elmfire_request::text,
-        geosync_request::text,
+        pyretechnics_done,
+        request::text,
         geoserver_workspace,
         model
     FROM match_jobs
@@ -182,6 +176,18 @@ CREATE OR REPLACE FUNCTION initialize_match_job(_user_id integer)
 
 $$ LANGUAGE SQL;
 
+-- The org_unique_id of the org stamped on the job, which picks the sig3 it runs on
+-- (PYR1-1842). Null when the job has no org.
+CREATE OR REPLACE FUNCTION get_match_job_org_unique_id(_match_job_id integer)
+ RETURNS text AS $$
+
+    SELECT o.org_unique_id
+    FROM match_jobs mj
+    JOIN organizations o ON o.organization_uid = mj.org_rid
+    WHERE mj.match_job_uid = _match_job_id
+
+$$ LANGUAGE SQL;
+
 -- Update job message
 CREATE OR REPLACE FUNCTION update_match_job(
     _match_job_id        integer,
@@ -190,11 +196,8 @@ CREATE OR REPLACE FUNCTION update_match_job(
     _display_name        varchar,
     _message             text,
     _elmfire_done        boolean,
-    _gridfire_done       boolean,
-    _dps_request         text,
-    _elmfire_request     text,
-    _gridfire_request    text,
-    _geosync_request     text,
+    _pyretechnics_done   boolean,
+    _request             text,
     _geoserver_workspace text,
     _model               text
  ) RETURNS void AS $$
@@ -206,11 +209,8 @@ CREATE OR REPLACE FUNCTION update_match_job(
         message = coalesce(_message, message),
         job_log = coalesce(job_log || to_char(now(), 'YYYY-MM-DD HH:MI.SS') || ': ' || _message || E'\n', job_log),
         elmfire_done = coalesce(_elmfire_done, elmfire_done),
-        gridfire_done = coalesce(_gridfire_done, gridfire_done),
-        dps_request = coalesce(_dps_request::jsonb, dps_request),
-        elmfire_request = coalesce(_elmfire_request::jsonb, elmfire_request),
-        gridfire_request = coalesce(_gridfire_request::jsonb, gridfire_request),
-        geosync_request = coalesce(_geosync_request::jsonb, geosync_request),
+        pyretechnics_done = coalesce(_pyretechnics_done, pyretechnics_done),
+        request = coalesce(_request::jsonb, request),
         updated_at = now(),
         geoserver_workspace = coalesce(_geoserver_workspace, geoserver_workspace),
         model = coalesce(_model, model)
