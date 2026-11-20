@@ -8,6 +8,7 @@
    [goog.object                          :as goog]
    [pyregence.config                     :as c]
    [pyregence.geo-utils                  :as g]
+   [pyregence.sentry                     :as sentry]
    [pyregence.state                      :as !]
    [pyregence.utils.async-utils          :as u-async]
    [pyregence.utils.data-utils           :as u-data]
@@ -889,13 +890,15 @@
           true
           (catch js/Error e
             (js/console.warn "Failed to create animation layer:" id (.-message e))
+            (sentry/report-exception! e {:layer-id id :phase "animation-create"})
             (try
               (when (js-invoke @the-map "getLayer" id)
                 (js-invoke @the-map "removeLayer" id))
               (when (js-invoke @the-map "getSource" id)
                 (js-invoke @the-map "removeSource" id))
               (catch js/Error cleanup-error
-                (js/console.warn "Failed to cleanup:" id (.-message cleanup-error))))
+                (js/console.warn "Failed to cleanup:" id (.-message cleanup-error))
+                (sentry/report-exception! cleanup-error {:layer-id id :phase "animation-cleanup"})))
             false))))))
 
 (defn- hide-forecast-layers!
@@ -999,7 +1002,8 @@
         (when (js-invoke @the-map "getSource" layer-id)
           (js-invoke @the-map "removeSource" layer-id))
         (catch js/Error e
-          (js/console.warn "Failed to remove animation layer:" layer-id (.-message e)))))
+          (js/console.warn "Failed to remove animation layer:" layer-id (.-message e))
+          (sentry/report-exception! e {:layer-id layer-id :phase "animation-remove"}))))
     (restore-forecast-layers!)
     (finally
       (reset! layers #{})

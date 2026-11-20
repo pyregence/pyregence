@@ -2,6 +2,7 @@
   (:gen-class)
   (:require
    [pyregence.clock     :as clock]
+   [pyregence.sentry    :as sentry]
    [triangulum.build-db :as build-db]
    [triangulum.cli      :refer [get-cli-options]]
    [triangulum.server   :as server]))
@@ -39,4 +40,5 @@
    selecting one means having a different root, and only test-support has one."
   [& args]
   (clock/install! (clock/->SystemClock))
+  (sentry/init!)
   (run args))

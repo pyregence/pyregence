@@ -5,6 +5,7 @@
             [clojure.core.async             :refer [alts! go chan <! put! go-loop timeout]]
             [clojure.string                 :as str]
             [pyregence.components.messaging :refer [toast-message!]]
+            [pyregence.sentry               :as sentry]
             [pyregence.session-ended        :as session-ended]
             [pyregence.state                :as !]
             [pyregence.utils.browser-utils  :as u-browser]))
@@ -68,7 +69,9 @@
             (cond (chan? result)    (<! result)
                   (promise? result) (<p! result)
                   :else             result))
-          (catch ExceptionInfo e (js/console.log "Error in process-fn:" (ex-cause e))))
+          (catch ExceptionInfo e
+            (js/console.log "Error in process-fn:" (ex-cause e))
+            (sentry/report-exception! (or (ex-cause e) e) {:url url})))
         (js/console.log "HTTP Error:" response)))))
 
 (defn- browser-encoded-body?
