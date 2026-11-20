@@ -846,12 +846,12 @@
                                                               [:a {:href   "https://landfire.gov"
                                                                    :target "_blank"}
                                                                "LANDFIRE"]
-                                                              " 2.6.0/2.5.0 at 30 m resolution. For more detailed version descriptions, please visit "
+                                                              " at 30 m resolution. For more detailed version descriptions, please visit "
                                                               [:a {:href   "https://landfire.gov/version_download.php"
                                                                    :target "_blank"}
                                                                "this link"]
                                                               " and click the \"LF Version Descriptions\" button."]
-                                                 :options    {:landfire {:opt-label "LANDFIRE 2.6.0/2.5.0"
+                                                 :options    {:landfire {:opt-label "LANDFIRE 2.6.0"
                                                                          :filter    "landfire"}}}
                                     :model      {:opt-label  "Model"
                                                  :hover-text [:p {:style {:margin-bottom "0"}}
@@ -965,13 +965,7 @@
                                                                  :target "_blank"}
                                                              "this link"]
                                                             " and click the \"LF Version Descriptions\" button."
-                                                              [:br]
-                                                              [:strong "- California Forest Observatory"]
-                                                              " – Summer 2020 at 10 m resolution. Courtesy of the California Forest Observatory ("
-                                                              [:a {:href   "https://forestobservatory.com"
-                                                                   :target "_blank"}
-                                                               "https://forestobservatory.com"]
-                                                              "), © Salo Sciences, Inc. 2020."]
+                                                              ]
                                                  :options    {:landfire       {:opt-label    "LANDFIRE 2.6.0"
                                                                                 :filter       "landfire"
                                                                                 :disabled-for #{:cawfe}}
