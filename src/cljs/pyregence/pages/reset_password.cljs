@@ -111,8 +111,7 @@
                         :on-verify   verify-reset-code!
                         :on-resend   send-reset-code!}]
     [:<>
-     [:p "To keep your account safe, we'll email a verification code to "
-      [:span {:style {:font-weight "bold"}} @email] " first."]
+     [:p "To keep your account safe, we'll email a verification code to your registered email first."]
      [buttons/primary {:text     "Email me the code"
                        :on-click send-reset-code!}]]))
 
