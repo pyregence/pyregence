@@ -1,6 +1,6 @@
 (ns pyregence.email.messages
   "Unified email message templates for both text and HTML formats."
-  (:require [hiccup.page       :refer [html5]]
+  (:require [hiccup2.core      :as h]
             [triangulum.config :refer [get-config]])
   (:import (java.net URLEncoder)))
 
@@ -155,23 +155,27 @@
                              :overflow         "hidden"}
         content-cell-style  {:padding "20px"}
         content-div-style   {:padding "30px 20px"}]
-    (html5
-     [:head
-      [:meta {:charset "UTF-8"}]
-      [:meta {:name "viewport" :content "width=device-width, initial-scale=1.0"}]]
-     [:body {:style body-style}
-      [:table {:width "100%" :cellpadding "0" :cellspacing "0"
-               :style outer-table-style}
-       [:tr
-        [:td {:align "center" :style outer-cell-style}
-         [:table {:width "600" :cellpadding "0" :cellspacing "0"
-                  :style content-table-style}
-          [:tr
-           [:td {:style content-cell-style}
-            (html-header)
-            [:div {:style content-div-style}
-             content]
-            (html-footer)]]]]]]])))
+    (str
+     (h/html
+      {:mode :html}
+      (h/raw "<!DOCTYPE html>")
+      [:html
+       [:head
+        [:meta {:charset "UTF-8"}]
+        [:meta {:name "viewport" :content "width=device-width, initial-scale=1.0"}]]
+       [:body {:style body-style}
+        [:table {:width "100%" :cellpadding "0" :cellspacing "0"
+                 :style outer-table-style}
+         [:tr
+          [:td {:align "center" :style outer-cell-style}
+           [:table {:width "600" :cellpadding "0" :cellspacing "0"
+                    :style content-table-style}
+            [:tr
+             [:td {:style content-cell-style}
+              (html-header)
+              [:div {:style content-div-style}
+               content]
+              (html-footer)]]]]]]]]))))
 
 (defn- fallback-url-note [url]
   [:p {:style (:p common-styles)}
