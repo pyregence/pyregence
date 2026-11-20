@@ -6,6 +6,7 @@
             [pyregence.marketplace.credentials :as creds]
             [pyregence.marketplace.handlers    :as handlers]
             [pyregence.marketplace.util        :as util]
+            [pyregence.sentry                  :as sentry]
             [triangulum.config                 :refer [get-config]])
   (:import [java.util Base64 Base64$Decoder]))
 
@@ -60,6 +61,7 @@
              :event-id   (get payload "eventId")
              :event-type (event-type->keyword (get payload "eventType"))))
     (catch Exception e
+      (sentry/report-exception! e {:marketplace.phase "pubsub-decode"})
       (log/warn e "Failed to decode Pub/Sub message")
       nil)))
 
@@ -94,7 +96,9 @@
                     {:count  (count ack-ids)
                      :status (:status response)})))
       (catch Exception e
-        (when (util/interrupted-cause? e) (.interrupt (Thread/currentThread)))
+        (if (util/interrupted-cause? e)
+          (.interrupt (Thread/currentThread))
+          (sentry/report-exception! e {:marketplace.phase "pubsub-ack"}))
         (log/error e "Failed to acknowledge Pub/Sub messages")))))
 
 (defn- dispatch-or-exhaust!
@@ -166,6 +170,7 @@
       (if (util/interrupted-cause? e)
         (throw (InterruptedException.))
         (let [next-ms (min (* 2 (max backoff-ms 1000)) max-backoff-ms)]
+          (sentry/report-exception! e {:marketplace.phase "pubsub-poll"})
           (log/error e "Pub/Sub poll error, backing off" {:backoff-ms next-ms})
           next-ms)))))
 

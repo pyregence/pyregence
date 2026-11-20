@@ -6,6 +6,7 @@
    [clojure.set                :refer [rename-keys]]
    [clojure.string             :as str]
    [pyregence.capabilities     :refer [layers layers-exist?]]
+   [pyregence.sentry           :as sentry]
    [pyregence.utils            :as u]
    [triangulum.config          :refer [get-config]]
    [triangulum.database        :refer [call-sql sql-primitive]]
@@ -162,6 +163,7 @@
        :forecast   {:min-date-iso-str (utc-string->iso-string forecast-min)
                     :max-date-iso-str forecast-max}})
     (catch Exception e
+      (sentry/report-exception! e)
       (log-str (str "Exception in parse-available-wx-dates: " e ". "))
       nil)))
 
@@ -442,7 +444,9 @@
                                                 :md-status    (if job-succeded? 0 1)})
                             false)
                         true)))
-      :on-error   (fn [e] (log-str "ERROR polling match-drop job-id=" job-id " match-job-id=" match-job-id ": " (.getMessage e)))
+      :on-error   (fn [e]
+                    (sentry/report-exception! e {:match-drop.phase "poll"})
+                    (log-str "ERROR polling match-drop job-id=" job-id " match-job-id=" match-job-id ": " (.getMessage e)))
       :on-timeout (fn []
                     (log-str "Timeout while waiting for job " job-id " results. Stopping progress recording.")
                     (update-match-job! {:match-job-id match-job-id
@@ -486,6 +490,7 @@
       ;; Without this the row stays blank and In-Progress forever, and the browser
       ;; polls a job it can never see finish.
       (catch Exception e
+        (sentry/report-exception! e {:match-drop.phase "submit"})
         (log-str "ERROR submitting match-drop match-job-id=" match-job-id ": " (ex-message e))
         (update-match-job! {:match-job-id  match-job-id
                             :md-status     1
@@ -599,7 +604,9 @@
                             (log-str "ERROR deleting match-drop '" match-job-id "'\n" job-state))
                           false)
                       true)))
-    :on-error   (fn [e] (log-str "ERROR polling delete match-drop job-id=" job-id " match-job-id=" match-job-id ": " (.getMessage e)))
+    :on-error   (fn [e]
+                  (sentry/report-exception! e {:match-drop.phase "poll-delete"})
+                  (log-str "ERROR polling delete match-drop job-id=" job-id " match-job-id=" match-job-id ": " (.getMessage e)))
     :on-timeout (fn [] (log-str "Timeout while waiting for delete job " job-id " results. Aborting."))}))
 
 (defn delete-match-drop!
@@ -621,7 +628,8 @@
                 (poll-delete-match-drop-results-then-remove-from-db! sig3 match-job-id))
             (data-response (str "The " geoserver-workspace " workspace is queued to be removed from "
                                 (get-config :triangulum.views/client-keys :geoserver :match-drop) "."))
-            (catch Exception _
+            (catch Exception e
+              (sentry/report-exception! e {:match-drop.phase "delete"})
               (update-match-job! {:match-job-id match-job-id
                                   :md-status    1
                                   :message      (format "Something went wrong when trying to delete Match Drop #%s." match-job-id)})

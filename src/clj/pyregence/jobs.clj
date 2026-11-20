@@ -3,6 +3,7 @@
   (:require [clojure.java.io            :as io]
             [clojure.string             :as str]
             [pyregence.capabilities     :refer [set-all-capabilities!]]
+            [pyregence.sentry           :as sentry]
             [pyregence.throttle         :refer [sweep!]]
             [pyregence.weather-stations :refer [periodically-get-observation-stations-in-the-background!]]
             [triangulum.config          :refer [get-config]]
@@ -45,7 +46,8 @@
     (while true
       (Thread/sleep expiration-time)
       (try (delete-tmp)
-           (catch Exception _)))))
+           (catch Exception e
+             (sentry/report-exception! e))))))
 
 (defn stop-clean-up-service! [future-thread]
   (log-str "Stopping temp file removal service")
@@ -66,7 +68,11 @@
 (defn start-throttle-sweep! []
   (future
     (log-str "Starting throttle sweep: login and 2FA attempt counts clear every five minutes")
-    (sweep!)))
+    (try
+      (sweep!)
+      (catch InterruptedException _)
+      (catch Throwable t
+        (sentry/report-exception! t)))))
 
 (defn stop-throttle-sweep! [fut]
   (future-cancel fut))

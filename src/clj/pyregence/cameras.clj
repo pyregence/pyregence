@@ -4,6 +4,7 @@
   (:require [clj-http.client     :as client]
             [clojure.data.json   :as json]
             [clojure.string      :as str]
+            [pyregence.sentry    :as sentry]
             [triangulum.config   :refer [get-config]]
             [triangulum.logging  :refer [log-str]]
             [triangulum.response :refer [data-response]]))
@@ -109,6 +110,7 @@
                            (let [{:keys [features] :as fetched} (fetch-features!)]
                              (when (seq features) fetched))
                            (catch Exception e
+                             (sentry/report-exception! e {:camera-source (name source-id)})
                              (log-str "ERROR: Unable to fetch "
                                       (name source-id)
                                       " cameras: "
@@ -184,7 +186,8 @@
   (if (= 200 status)
     (try
       (json/read-str body :key-fn keyword)
-      (catch Exception _
+      (catch Exception e
+        (sentry/report-exception! e {:camera-source "alert-west"})
         (log-str "ERROR: Unable to read JSON response from ALERTWest cameras API.")))
     (log-str "WARN: request to ALERTWest cameras api failed with status " status)))
 
@@ -283,7 +286,8 @@
   (if (= 200 status)
     (let [sites (try
                   (:payload (json/read-str body :key-fn keyword))
-                  (catch Exception _
+                  (catch Exception e
+                    (sentry/report-exception! e {:camera-source "faa"})
                     (log-str "ERROR: Unable to read JSON response from FAA cameras API.")))]
       sites)
     (log-str "WARN: request to FAA cameras api failed with status " status)))

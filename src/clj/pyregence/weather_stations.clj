@@ -1,6 +1,7 @@
 (ns pyregence.weather-stations
   (:require
    [clj-http.client                          :as client]
+   [pyregence.sentry                         :as sentry]
    [pyregence.weather-stations.CA.servers    :as ca-servers]
    [pyregence.utils                          :as u]
    [triangulum.config                        :refer [get-config]]
@@ -54,7 +55,9 @@
         ;;TODO consider a way to hydrate per page and/or save cache between server restarts.
         (get-observation-stations!)
         (log-str "weather-stations-updated")
-        (catch Exception ex (log (ex-data ex) :truncate? false)))
+        (catch Exception ex
+          (sentry/report-exception! ex)
+          (log (ex-data ex) :truncate? false)))
       (Thread/sleep (* 1000 ;; 1s
                        60   ;; 1m
                        (get-config ::get-observation-stations-every-n-minutes)))
