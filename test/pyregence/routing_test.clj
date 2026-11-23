@@ -53,13 +53,13 @@
     (testing "org-admin on a paid tier (Pro) passes"
       (is (true? (handlers/route-authenticator
                   (request {:role "organization_admin" :membership "accepted"
-                            :tier "tier2_pro" :token valid-token})
+                            :tier "small_utility" :token valid-token})
                   gate))))
 
     (testing "org-admin on tier1/free is blocked (the reported ticket scenario)"
       (is (false? (handlers/route-authenticator
                    (request {:role "organization_admin" :membership "accepted"
-                             :tier "tier1_free_registered" :token valid-token})
+                             :tier "community" :token valid-token})
                    gate))))
 
     (testing "super-admin bypasses the tier check"
@@ -80,7 +80,7 @@
     (testing "a paid-tier org-admin without a valid token is blocked"
       (is (false? (handlers/route-authenticator
                    (request {:role "organization_admin" :membership "accepted"
-                             :tier "tier2_pro" :token "wrong-token"})
+                             :tier "small_utility" :token "wrong-token"})
                    gate))))))
 
 ;; -----------------------------------------------------------------------------

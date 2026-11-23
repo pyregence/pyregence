@@ -7,11 +7,11 @@
 INSERT INTO organizations
     (organization_uid, org_unique_id, org_name, email_domains, auto_add, auto_accept, subscription_tier)
 VALUES
-    (1, 'development', 'Development', '@pyr.dev', TRUE, TRUE, 'tier2_pro'),
-    (2, 'delete-me', 'Delete Me Inc.', '@deleteme.com,@remove.com', TRUE, FALSE, 'tier2_pro'),
-    (3, 'update-me', 'Update My Setttings and Company', '@updateme.com', FALSE, TRUE, 'tier2_pro'),
-    (4, 'sig', 'Spatial Informatics Group', '@sig-gis.com', TRUE, TRUE, 'tier2_pro'),
-    (5, 'pyregence-consortium', 'Pyregence Consortium', '', FALSE, FALSE, 'tier3_enterprise');
+    (1, 'development', 'Development', '@pyr.dev', TRUE, TRUE, 'small_utility'),
+    (2, 'delete-me', 'Delete Me Inc.', '@deleteme.com,@remove.com', TRUE, FALSE, 'small_utility'),
+    (3, 'update-me', 'Update My Setttings and Company', '@updateme.com', FALSE, TRUE, 'small_utility'),
+    (4, 'sig', 'Spatial Informatics Group', '@sig-gis.com', TRUE, TRUE, 'mid_range_utility'),
+    (5, 'pyregence-consortium', 'Pyregence Consortium', '', FALSE, FALSE, 'enterprise');
 
 INSERT INTO users
     (user_uid, email, name, password, email_verified, match_drop_access, settings, user_role, org_membership_status, organization_rid)

@@ -78,7 +78,7 @@
       (derive :tier1-free-registered :tier0-guest)))
 
 (defn- sql->kw
-  "Turns a SQL string like super_admin into :super-admin  or tier2_pro into :tier2-pro
+  "Turns a SQL string like super_admin into :super-admin
    so that we can use the role and subscription hierarchies."
   [sql-str]
   (some-> sql-str

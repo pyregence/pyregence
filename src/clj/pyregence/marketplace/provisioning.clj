@@ -6,16 +6,14 @@
 
 (def plan-id->tier
   "Maps GCP Marketplace plan IDs to subscription_tier values."
-  {"basic"               "tier1_free_registered"
-   "essential-plan"      "tier1_basic_paid"
-   "essential-plan-P1Y"  "tier1_basic_paid"
-   "business-plan"       "tier2_pro"
-   "business-plan-P1Y"   "tier2_pro"
-   "enterprise-plan"     "tier3_enterprise"
-   "enterprise-plan-P1Y" "tier3_enterprise"})
+  {"basic"               "community"
+   "business-plan"       "small_utility"
+   "business-plan-P1Y"   "mid_range_utility" ;; TODO should this be small_utility or mid_range_utility
+   "enterprise-plan"     "enterprise"
+   "enterprise-plan-P1Y" "enterprise"})
 
 (def ^{:doc "Subscription tier used when a plan-id is unknown."}
-  default-tier "tier1_free_registered")
+  default-tier "community")
 
 (def ^{:doc "Set of valid subscription_tier values recognized by plan-id->tier."}
   valid-tiers (set (vals plan-id->tier)))
@@ -99,14 +97,12 @@
   (email->org-name "joe@co.uk")                  ;=> "Joe"
   (email->org-name "joe@localhost")               ;=> "Localhost"
   (->org-unique-id "accounts/xyz")               ;=> "mp-xyz"
-  (get plan-id->tier "basic")                    ;=> "tier1_free_registered"
-  (get plan-id->tier "essential-plan")           ;=> "tier1_basic_paid"
-  (get plan-id->tier "essential-plan-P1Y")       ;=> "tier1_basic_paid"
-  (get plan-id->tier "business-plan")            ;=> "tier2_pro"
-  (get plan-id->tier "business-plan-P1Y")        ;=> "tier2_pro"
-  (get plan-id->tier "enterprise-plan")          ;=> "tier3_enterprise"
-  (get plan-id->tier "enterprise-plan-P1Y")      ;=> "tier3_enterprise"
-  (get plan-id->tier "unknown" default-tier)     ;=> "tier1_free_registered"
+  (get plan-id->tier "basic")                    ;=> "community"
+  (get plan-id->tier "business-plan")            ;=> "small_utility"
+  ;;(get plan-id->tier "business-plan-P1Y")        ;=> "tier2_pro" ;;TODO what should this be?
+  (get plan-id->tier "enterprise-plan")          ;=> "enterprise"
+  (get plan-id->tier "enterprise-plan-P1Y")      ;=> "enterprise"
+  (get plan-id->tier "unknown" default-tier)     ;=> "community"
   ;; missing :email triggers "Email is required" — all validation errors use :invalid-user-info
   (try (provision! {:procurement-account-id "1"} [])
        (catch Exception e (:type (ex-data e))))  ;=> :invalid-user-info

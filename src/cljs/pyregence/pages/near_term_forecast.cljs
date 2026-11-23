@@ -1020,7 +1020,7 @@
                                 (organizations/all user-psps-orgs-list)))
               (cond->
                (or
-                (#{"tier1_basic_paid" "tier2_pro" "tier3_enterprise"} subscription-tier)
+                 (#{"small_utility" "mid_range_utility" "enterprise"} subscription-tier)
                 (#{"super_admin" "account_manager"} user-role))
                 (as-> m
                       (reduce
@@ -1036,7 +1036,7 @@
               ;; check is what actually keeps the model out of unentitled accounts.
               (cond->
                (or
-                (#{"tier1_basic_paid" "tier2_pro" "tier3_enterprise"} subscription-tier)
+                (#{"small_utility" "mid_range_utility" "enterprise"} subscription-tier)
                 (#{"super_admin" "account_manager"} user-role))
                 (assoc-in [:fire-weather :params :model :options :cffdrs]
                           {:opt-label "CFFDRS", :filter "cffdrs", :geoserver-key :parrot05}))))

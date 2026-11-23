@@ -81,7 +81,7 @@ CREATE OR REPLACE FUNCTION get_user_with_totp(_user_id integer)
       u.user_role         AS user_role,
       u.org_membership_status,
       u.organization_rid,
-      COALESCE(o.subscription_tier, 'tier1_free_registered'::subscription_tier) AS subscription_tier,
+      COALESCE(o.subscription_tier, 'community'::subscription_tier) AS subscription_tier,
       COALESCE(o.marketplace_status, 'none'::marketplace_status) AS marketplace_status
     FROM user_totp t
     JOIN users u

@@ -27,7 +27,7 @@ $$ LANGUAGE SQL;
 CREATE OR REPLACE FUNCTION get_org_subscription_tier(_org_id integer)
 RETURNS subscription_tier AS $$
 
-    SELECT COALESCE(subscription_tier, 'tier1_free_registered')
+    SELECT COALESCE(subscription_tier, 'community')
     FROM organizations
     WHERE organization_uid = _org_id
 
@@ -373,7 +373,7 @@ CREATE OR REPLACE FUNCTION suspend_marketplace_entitlement(
 
     UPDATE organizations
     SET pre_suspend_tier   = COALESCE(pre_suspend_tier, subscription_tier),
-        subscription_tier  = 'tier1_free_registered',
+        subscription_tier  = 'community',
         marketplace_status = 'suspended'
     WHERE marketplace_account_id = _marketplace_account_id
       AND marketplace_status IN ('active', 'suspended', 'pending_cancellation')
@@ -387,7 +387,7 @@ CREATE OR REPLACE FUNCTION cancel_marketplace_entitlement(
 
     UPDATE organizations
     SET pre_suspend_tier   = COALESCE(pre_suspend_tier, subscription_tier),
-        subscription_tier  = 'tier1_free_registered',
+        subscription_tier  = 'community',
         marketplace_status = 'cancelled',
         archived           = true,
         archived_date      = NOW()
@@ -422,7 +422,7 @@ BEGIN
         usage_reporting_id     = NULL,
         gcp_project_id         = NULL,
         pre_suspend_tier       = NULL,
-        subscription_tier      = 'tier1_free_registered',
+        subscription_tier      = 'community',
         marketplace_status     = 'none'
     WHERE marketplace_account_id = _marketplace_account_id
     RETURNING organization_uid INTO _org_id;

@@ -5,10 +5,10 @@
 --------------------------------------------------------------------------------
 
 CREATE TYPE subscription_tier AS ENUM (
-  'tier1_free_registered',
-  'tier1_basic_paid',
-  'tier2_pro',
-  'tier3_enterprise'
+  'community',
+  'small_utility',
+  'mid_range_utility',
+  'enterprise'
 );
 
 CREATE TYPE marketplace_status AS ENUM (
@@ -31,7 +31,7 @@ CREATE TABLE organizations (
     created_date           date DEFAULT NOW(),
     archived_date          date,
     system_assets          boolean,
-    subscription_tier      subscription_tier NOT NULL DEFAULT 'tier1_free_registered',
+    subscription_tier      subscription_tier NOT NULL DEFAULT 'community',
     marketplace_account_id text UNIQUE,
     marketplace_order_id   text,
     marketplace_status     marketplace_status NOT NULL DEFAULT 'none',

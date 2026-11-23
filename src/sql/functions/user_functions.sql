@@ -185,7 +185,7 @@ CREATE OR REPLACE FUNCTION verify_user_login(_email text, _password text)
       u.user_role             AS user_role,
       u.org_membership_status AS org_membership_status,
       u.organization_rid      AS organization_rid,
-      COALESCE(o.subscription_tier, 'tier1_free_registered'::subscription_tier) AS subscription_tier,
+      COALESCE(o.subscription_tier, 'community'::subscription_tier) AS subscription_tier,
       COALESCE(o.marketplace_status, 'none'::marketplace_status) AS marketplace_status
     FROM users u
     LEFT JOIN organizations o
@@ -262,7 +262,7 @@ CREATE OR REPLACE FUNCTION get_user_session_row(_user_id integer)
 
     SELECT u.user_uid, u.email, u.name, u.match_drop_access, u.user_role, u.org_membership_status,
            u.organization_rid,
-           COALESCE(o.subscription_tier, 'tier1_free_registered'::subscription_tier),
+           COALESCE(o.subscription_tier, 'community'::subscription_tier),
            COALESCE(o.marketplace_status, 'none'::marketplace_status)
     FROM users u
     LEFT JOIN organizations o
@@ -723,7 +723,7 @@ RETURNS TABLE (
       u.user_role             AS user_role,
       u.org_membership_status AS org_membership_status,
       u.organization_rid      AS organization_rid,
-      COALESCE(o.subscription_tier, 'tier1_free_registered'::subscription_tier)  AS subscription_tier,
+      COALESCE(o.subscription_tier, 'community'::subscription_tier)  AS subscription_tier,
       COALESCE(o.marketplace_status, 'none'::marketplace_status)                 AS marketplace_status
     FROM users u
     LEFT JOIN organizations o ON o.organization_uid = u.organization_rid
