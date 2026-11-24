@@ -977,13 +977,13 @@
                                                               " - Blend of HRRR, RRFS, and GFS 0.125\u00B0 to 8 days."
                                                               [:br]
                                                               [:br]
-                                                              [:strong "NAM"]
-                                                              " - the North American Mesoscale forecast, which CAWFE downscales and then couples to the fire."]
+                                                              [:strong "RRFS"]
+                                                              " - the Rapid Refresh Forecast System at 13 km, which CAWFE downscales and then couples to the fire."]
                                                  ;; Neither option filters anything; this dropdown only reports which
                                                  ;; forecast drove the run, so each model shows its own.
                                                  :options    {:hybrid {:opt-label    "Hybrid"
                                                                        :disabled-for #{:cawfe}}
-                                                              :nam    {:opt-label   "NAM"
+                                                              :rrfs   {:opt-label   "RRFS"
                                                                        :enabled-for #{:cawfe}}}}
                                     ;; Inert rather than hidden for CAWFE: the match drop picks the model,
                                     ;; but the panel should still say which one is running so a CAWFE drop
@@ -1014,7 +1014,7 @@
                                                               [:br]
                                                               [:br]
                                                               [:strong "CAWFE"]
-                                                              " (Coupled Atmosphere-Wildland Fire Environment) downscales the NAM forecast and simulates how the fire feeds back on the local weather, so the fire's own heat shapes the winds that drive it. It runs a single deterministic simulation rather than an ensemble, so there is no predicted fire size to choose, and it takes considerably longer to finish."]
+                                                              " (Coupled Atmosphere-Wildland Fire Environment) downscales the RRFS forecast and simulates how the fire feeds back on the local weather, so the fire's own heat shapes the winds that drive it. It runs a single deterministic simulation rather than an ensemble, so there is no predicted fire size to choose, and it takes considerably longer to finish."]
                                                  :options    {:elmfire      {:opt-label "ELMFIRE"
                                                                              :filter    "elmfire"}
                                                               :pyretechnics {:enabled?  #(feature-enabled? :pyretechnics)
