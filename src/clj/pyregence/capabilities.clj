@@ -5,6 +5,7 @@
    [clojure.edn         :as edn]
    [clojure.set         :as set]
    [clojure.string      :as str]
+   [pyregence.sentry    :as sentry]
    [pyregence.session   :as session]
    [triangulum.config   :refer [get-config]]
    [triangulum.database :refer [call-sql]]
@@ -456,6 +457,7 @@
                                 (log message :force-stdout? stdout?)
                                 (data-response message))
                               (catch Exception e
+                                (sentry/report-exception! e {:geoserver (name geoserver-key)})
                                 (log-str "Failed to load capabilities for "
                                          (get-config :triangulum.views/client-keys :geoserver geoserver-key)
                                          "\n" (ex-message e)))))]
@@ -501,6 +503,7 @@
                                            "workspace-name" ws})))
            (doall)))
     (catch Exception e
+      (sentry/report-exception! e {:geoserver (name geoserver-key)})
       (log-str "Failed to list workspaces for " geoserver-url ", skipping.\n" (ex-message e)))))
 
 (defn set-all-capabilities!

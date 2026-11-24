@@ -5,6 +5,7 @@
             [clojure.repl        :refer [demunge]]
             [clojure.string      :as    str]
             [nrepl.server        :as    nrepl-server]
+            [pyregence.sentry    :as    sentry]
             [pyregence.session   :as    session]
             [pyregence.session-cookie :as session-cookie]
             [pyregence.session-ended :as session-ended]
@@ -13,11 +14,15 @@
             [ring.util.response  :refer [redirect]]
             [triangulum.config   :refer [get-config]]
             [triangulum.database :refer [call-sql sql-primitive]]
-            [triangulum.handler  :refer [development-app]]
+            [triangulum.handler  :refer [authenticated-routing-handler
+                                         development-app]]
             [triangulum.logging  :refer [log-str set-log-path!]]
             [triangulum.response :as    response :refer [data-response]]
             [triangulum.views    :as    views]
             [triangulum.worker   :refer [start-workers!]]))
+
+(def sentry-authenticated-routing-handler
+  (sentry/wrap-sentry authenticated-routing-handler))
 
 (defn render-page
   "Serve the page-facing session view. If an authenticated session has ended,
@@ -25,8 +30,11 @@
   [uri]
   (let [handler (views/render-page uri)]
     (fn [request]
-      (let [{:keys [visible ended?]} (session/for-page (:session request))]
-        (cond-> (handler (assoc request :session visible))
+      (let [{:keys [visible ended?]} (session/for-page (:session request))
+            sentry-cfg               (sentry/client-config)
+            page-session             (cond-> visible
+                                       sentry-cfg (assoc :sentry sentry-cfg))]
+        (cond-> (handler (assoc request :session page-session))
           ended? session-cookie/expire)))))
 
 ^:rct/test
@@ -481,10 +489,15 @@
     ;; `bb dev` answered every request with the "no clock installed" throw.
     (clock/install! (clock/->SystemClock))))
 
+(defonce sentry-delay
+  (delay
+    (sentry/init!)))
+
 (defn development-app-wrapper
   "Funky wrap-a-doodler"
   [request]
   @clock-delay
+  @sentry-delay
   @nrepl-delay
   @workers-delay
   @log-dir-delay

@@ -18,6 +18,7 @@
 # writes it. Track the directory, ignore its contents.
 /target/*
 !/target/.gitkeep
+/sourcemaps/
 /deps-for-clj-watson.edn
 
 # Configuration files

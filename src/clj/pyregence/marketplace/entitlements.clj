@@ -5,6 +5,7 @@
             [clojure.tools.logging             :as log]
             [pyregence.marketplace.credentials :as creds]
             [pyregence.marketplace.util        :as util]
+            [pyregence.sentry                  :as sentry]
             [triangulum.config                 :refer [get-config]]))
 
 (def ^:private api-base "https://cloudcommerceprocurement.googleapis.com")
@@ -53,7 +54,9 @@
            :error   :api-error
            :success false})))
     (catch Exception e
-      (when (util/interrupted-cause? e) (.interrupt (Thread/currentThread)))
+      (if (util/interrupted-cause? e)
+        (.interrupt (Thread/currentThread))
+        (sentry/report-exception! e {:marketplace.phase "entitlement-api"}))
       (log/error e "Failed to call entitlement API" {:url url})
       {:error   :request-exception
        :success false})))

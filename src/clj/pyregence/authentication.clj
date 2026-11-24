@@ -3,6 +3,7 @@
             [pyregence.clock            :as clock]
             [pyregence.email            :as email]
             [pyregence.marketplace      :as marketplace]
+            [pyregence.sentry           :as sentry]
             [pyregence.session          :as session]
             [pyregence.session-cookie   :as session-cookie]
             [pyregence.throttle         :as throttle]
@@ -176,7 +177,10 @@
   "Mails a 2FA code and says whether it went. A failure is only logged, since the page can resend."
   [user-email]
   (try (not= 400 (:status (email/send-email! nil user-email :2fa)))
-       (catch Exception e (log-str "Sending the 2FA code failed: " (ex-message e)) false)))
+       (catch Exception e
+         (sentry/report-exception! e)
+         (log-str "Sending the 2FA code failed: " (ex-message e))
+         false)))
 
 (defn- await-second-factor!
   "Marks `session` as waiting, from `now`, for `user`'s second factor, mailing the code for :email."
@@ -228,6 +232,7 @@
       {:status  302
        :headers {"Location" "/login?marketplace=1"}})
     (catch Exception e
+      (sentry/report-exception! e)
       (log-str "Marketplace SSO login error: " (.getMessage e))
       {:status  302
        :headers {"Location" "/login?marketplace=1"}})))

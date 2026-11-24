@@ -2,6 +2,7 @@
   (:import java.util.UUID)
   (:require [clojure.string           :as str]
             [pyregence.email.messages :as messages]
+            [pyregence.sentry         :as sentry]
             [triangulum.config        :refer [get-config]]
             [triangulum.database      :refer [call-sql sql-primitive]]
             [triangulum.email         :refer [send-mail]]
@@ -53,7 +54,9 @@
   [thunk]
   (future
     (try (thunk)
-         (catch Exception e (log-str "Background task failed: " (.getMessage e))))))
+         (catch Exception e
+           (sentry/report-exception! e)
+           (log-str "Background task failed: " (.getMessage e))))))
 
 (defn- send-verification-email!
   "Send a verification email with a token. config-type is :security (password reset) or :support (new user).

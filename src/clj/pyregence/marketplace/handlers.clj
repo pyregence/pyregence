@@ -3,6 +3,7 @@
             [pyregence.marketplace.entitlements  :as entitlements]
             [pyregence.marketplace.provisioning  :as provisioning]
             [pyregence.marketplace.util          :as util]
+            [pyregence.sentry                    :as sentry]
             [triangulum.database                 :refer [call-sql sql-primitive]]))
 
 (defn- entitlement->account-id
@@ -145,6 +146,7 @@
       (do (log/info "Unknown event, acking" {:event-type (:event-type event)})
           true))
     (catch Exception e
+      (sentry/report-exception! e {:marketplace.event-type (some-> (:event-type event) name)})
       (log/error e "Handler exception"
                  (select-keys event [:account-id :entitlement-id :event-id :event-type]))
       false)))

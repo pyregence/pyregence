@@ -5,6 +5,7 @@
             [pyregence.marketplace.jwt           :as jwt]
             [pyregence.marketplace.provisioning  :as provisioning]
             [pyregence.marketplace.util          :as util]
+            [pyregence.sentry                    :as sentry]
             [triangulum.database                 :refer [call-sql sql-primitive]]))
 
 (def ^:private signup-ttl-secs (* 24 60 60))
@@ -23,6 +24,7 @@
                       {:procurement-id procurement-account-id :error (:error resp)})
             {:approved? false :error (:error resp)})))
     (catch Exception e
+      (sentry/report-exception! e {:marketplace.phase "early-approval"})
       (log/warn e "Early account approval threw"
                 {:procurement-id procurement-account-id})
       {:approved? false :error :exception})))
@@ -61,6 +63,7 @@
         (log/warn "Marketplace JWT validation failed" {:error (Throwable/.getMessage e)})
         {:status 400 :body "Invalid marketplace token"})
       (catch Exception e
+        (sentry/report-exception! e {:marketplace.phase "signup"})
         (log/error e "Unexpected error processing marketplace JWT")
         {:status 500 :body "Internal error"}))
     {:status 400 :body "Missing marketplace token"}))
@@ -102,6 +105,7 @@
                         {:org-id        (:organization-id result)
                          :pre-approved? (boolean approved?)}))
             (catch Exception e
+              (sentry/report-exception! e {:marketplace.phase "complete-signup"})
               (log/error e "Failed to complete marketplace signup"
                          {:user-email user-email}))))))))
 

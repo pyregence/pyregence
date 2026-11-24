@@ -3,6 +3,7 @@
    ["vega-embed"                 :as vega-embed :refer [embed]]
    [cljs.core.async.interop      :refer-macros [<p!]]
    [clojure.core.async           :refer [go]]
+   [pyregence.sentry             :as sentry]
    [pyregence.state              :as !]
    [pyregence.utils.data-utils   :as u-data]
    [pyregence.utils.misc-utils   :as u-misc]
@@ -122,7 +123,9 @@
                                                    (u-misc/try-js-aget data "datum" "hour"))]
                                  ;; Vega hands the datum's hour back as a string.
                                  (layer-click! (js/parseFloat hour)))))))
-        (catch ExceptionInfo e (js/console.log (ex-cause e)))))))
+        (catch ExceptionInfo e
+          (js/console.log (ex-cause e))
+          (sentry/report-exception! (or (ex-cause e) e) {:component "vega"}))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; UI Components
