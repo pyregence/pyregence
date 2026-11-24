@@ -526,7 +526,7 @@
          (and cawfe? (not (cawfe-artefact-storage-configured?)))
          {:error "The CAWFE model is not configured. Please contact your system administrator."}
 
-         ;; CAWFE resolves its weather from the NAM forecast, so there is no historical path.
+         ;; CAWFE resolves its weather from the RRFS forecast, so there is no historical path.
          (and cawfe? (= "historical" wx-type))
          {:error "CAWFE only supports forecast weather. Please select a forecast fire or a different model."}
 
