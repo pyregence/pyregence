@@ -69,13 +69,9 @@
 
 (def subscription-hierarchy
   (-> (make-hierarchy)
-      (derive :tier3-enterprise      :tier2-pro)
-      (derive :tier3-enterprise      :tier1-basic-paid)
-      (derive :tier3-enterprise      :tier1-free-registered)
-      (derive :tier2-pro             :tier1-basic-paid)
-      (derive :tier2-pro             :tier1-free-registered)
-      (derive :tier1-basic-paid      :tier1-free-registered)
-      (derive :tier1-free-registered :tier0-guest)))
+      (derive :enterprise           :mid_range_utility)
+      (derive :mid_range_utility    :small_range_utility)
+      (derive :small_range_utility  :community)))
 
 (defn- sql->kw
   "Turns a SQL string like super_admin into :super-admin
