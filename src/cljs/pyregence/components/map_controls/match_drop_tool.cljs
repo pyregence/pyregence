@@ -439,7 +439,7 @@
 
             (seq @!/md-available-dates)
             [:<>
-             ;; CAWFE resolves the NAM forecast, so historical weather is not on offer.
+             ;; CAWFE resolves the RRFS forecast, so historical weather is not on offer.
              (when-not (= "cawfe" @model)
                [:<>
                 [weather-info forecast-weather?]
